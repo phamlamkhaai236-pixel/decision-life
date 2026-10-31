@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Simulator — Một đời người</title>
+
+<style>
+:root {
+    --bg: #111827;
+    --panel: #1c2638;
+    --panel2: #243149;
+    --line: #394a63;
+    --text: #edf3ff;
+    --muted: #aab8d0;
+    --gold: #f4c96b;
+    --mint: #82e0c0;
+    --pink: #f3a5bd;
+    --blue: #9bc4ff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(ellipse at top, #263650, #111827 65%);
+    color: var(--text);
+    font-family: monospace;
+    line-height: 1.6;
+}
+
+button, input, select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 13px;
+    background: #2b3b55;
+    color: var(--text);
+}
+
+button:hover {
+    filter: brightness(1.15);
+}
+
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.primary {
+    background: var(--gold);
+    color: #25202a;
+    font-weight: bold;
+}
+
+header {
+    max-width: 1200px;
+    margin: auto;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.brand span {
+    color: var(--gold);
+}
+
+.top-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 10px 18px 35px;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+.panel {
+    background: linear-gradient(145deg, #243149, #182233);
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 12px 30px #0002;
+}
+
+.hero {
+    padding: 35px;
+}
+
+h1 {
+    font-size: clamp(27px, 4vw, 42px);
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 21px;
+}
+
+h3 {
+    font-size: 16px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.eyebrow {
+    color: var(--mint);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.col-12 { grid-column: span 12; }
+.col-7  { grid-column: span 7; }
+.col-5  { grid-column: span 5; }
+
+label {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+input[type="text"], select {
+    width: 100%;
+    background: #121c2b;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 11px;
+    margin-bottom: 13px;
+}
+
+.choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.choice {
+    text-align: left;
+    padding: 13px;
+    background: #19263a;
+    min-height: 75px;
+}
+
+.choice strong {
+    display: block;
+    color: var(--gold);
+    margin-bottom: 4px;
+}
+
+.choice small {
+    color: var(--muted);
+    display: block;
+}
+
+.choice.selected {
+    border-color: var(--mint);
+    background: #1d3b42;
+    box-shadow: inset 0 0 0 1px var(--mint);
+}
+
+.pixel-scene {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #33445c;
+    border-radius: 12px;
+    background: #101a29;
+    margin: 16px 0;
+}
+
+.pixel-sun {
+    font-size: 42px;
+    color: var(--gold);
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(270px, .9fr);
+    gap: 14px;
+}
+
+.dayline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.day {
+    color: var(--gold);
+    font-weight: bold;
+}
+
+.event {
+    background: #151f30;
+    border-left: 3px solid var(--gold);
+    padding: 14px;
+    border-radius: 0 10px 10px 0;
+    margin: 14px 0;
+}
+
+.activity-list {
+    display: grid;
+    gap: 9px;
+}
+
+.activity {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    text-align: left;
+    background: #1a283c;
+}
+
+.activity-icon {
+    font-size: 24px;
+}
+
+.activity-body {
+    flex: 1;
+}
+
+.activity-body strong {
+    display: block;
+}
+
+.activity-body small {
+    display: block;
+    color: var(--muted);
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.stat {
+    background: #111c2b;
+    border: 1px solid #31425a;
+    padding: 10px;
+    border-radius: 9px;
+}
+
+.stat-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    font-size: 11px;
+}
+
+.bar {
+    height: 7px;
+    background: #334158;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.bar i {
+    display: block;
+    height: 100%;
+    background: var(--mint);
+}
+
+.bar.gold i { background: var(--gold); }
+.bar.pink i { background: var(--pink); }
+.bar.blue i { background: var(--blue); }
+
+.pill {
+    display: inline-block;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--muted);
+    margin: 2px;
+}
+
+.feed {
+    display: grid;
+    gap: 8px;
+    max-height: 330px;
+    overflow-y: auto;
+}
+
+.feed-item {
+    background: #121d2d;
+    border: 1px solid #2d3d54;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.feed-item time {
+    display: block;
+    color: var(--mint);
+    font-size: 10px;
+    margin-bottom: 5px;
+}
+
+.modal-back {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #060a11cc;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    z-index: 10;
+}
+
+.modal-back.show {
+    display: flex;
+}
+
+.modal {
+    width: min(650px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #1c293d;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.memoir {
+    white-space: pre-wrap;
+    line-height: 1.8;
+    background: #111c2b;
+    border: 1px solid var(--line);
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.footer-note {
+    text-align: center;
+    color: #8190a8;
+    font-size: 11px;
+    margin: 25px 0;
+}
+
+@media (max-width: 760px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .col-7, .col-5 {
+        grid-column: span 12;
+    }
+
+    .choices {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        padding: 23px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="brand">✦ DECISION <span>SIMULATOR</span></div>
+
+    <div class="top-actions">
+        <button onclick="openModal('journalModal')">▤ Nhật ký</button>
+        <button onclick="openModal('profileModal')">◈ Hồ sơ</button>
+        <button onclick="saveGame(true)">⇩ Lưu</button>
+    </div>
+</header>
+
+<main>
+
+<!-- MÀN HÌNH TẠO NHÂN VẬT -->
+
+<section id="setupScreen" class="screen active">
+
+    <div class="panel hero">
+        <div class="eyebrow">A Life Simulation</div>
+
+        <h1>
+            Một cuộc đời.<br>
+            <span style="color:var(--gold)">Vô vàn ngã rẽ.</span>
+        </h1>
+
+        <p class="muted">
+            Bạn không chỉ chơi một trò chơi.
+            Bạn sẽ trải qua một cuộc đời, đưa ra những lựa chọn,
+            gặp gỡ những con người và nhìn thấy cách quá khứ
+            góp phần tạo nên hiện tại.
+        </p>
+
+        <div class="pixel-scene">
+            <div class="pixel-sun">☼</div>
+            <div>
+                <strong style="color:var(--gold)">
+                    NGÀY 0 — TRƯỚC KHI BẮT ĐẦU
+                </strong>
+                <br>
+                Một câu chuyện chưa được viết.
+                Một cuộc đời chưa biết sẽ đi về đâu.
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+
+        <div class="panel col-7">
+            <div class="eyebrow">01 / Nhân vật</div>
+            <h2>Ai sẽ sống cuộc đời này?</h2>
+
+            <label for="charName">Tên nhân vật</label>
+            <input id="charName" type="text" maxlength="24" value="An">
+
+            <label>Giới tính nhân vật</label>
+
+            <div class="choices" id="genderChoices">
+
+                <button class="choice selected"
+                    data-gender="Nữ"
+                    onclick="selectChoice('genderChoices',this)">
+                    <strong>♀ Nữ</strong>
+                    <small>Nhân vật nữ</small>
+                </button>
+
+                <button class="choice"
+                    data-gender="Nam"
+                    onclick="selectChoice('genderChoices',this)">
+                    <strong>♂ Nam</strong>
+                    <small>Nhân vật nam</small>
+                </button>
+
+                <button class="choice"
+                    data-gender="Phi nhị nguyên"
+                    onclick="selectChoice('genderChoices',this)">
+                    <strong>✧ Phi nhị nguyên</strong>
+                    <small>Một lựa chọn nhân vật khác</small>
+                </button>
+
+                <button class="choice"
+                    data-gender="Tùy chỉnh"
+                    onclick="selectChoice('genderChoices',this)">
+                    <strong>✎ Tùy chỉnh</strong>
+                    <small>Tự định nghĩa nhân vật</small>
+                </button>
+
+            </div>
+
+            <p class="muted" style="font-size:11px;margin-top:12px">
+                Đây là thiết lập nhân vật trong trò chơi.
+            </p>
+        </div>
+
+        <div class="panel col-5">
+            <div class="eyebrow">02 / Điểm xuất phát</div>
+            <h2>Hoàn cảnh gia đình</h2>
+
+            <div class="choices" id="familyChoices">
+
+                <button class="choice selected"
+                    data-family="Ổn định"
+                    onclick="selectChoice('familyChoices',this)">
+                    <strong>⌂ Gia đình ổn định</strong>
+                    <small>Nhu cầu cơ bản thường được đáp ứng.</small>
+                </button>
+
+                <button class="choice"
+                    data-family="Chật vật"
+                    onclick="selectChoice('familyChoices',this)">
+                    <strong>◌ Kinh tế chật vật</strong>
+                    <small>Nguồn lực hạn chế.</small>
+                </button>
+
+                <button class="choice"
+                    data-family="Kỳ vọng cao"
+                    onclick="selectChoice('familyChoices',this)">
+                    <strong>✦ Kỳ vọng cao</strong>
+                    <small>Nhiều cơ hội nhưng cũng có áp lực.</small>
+                </button>
+
+                <button class="choice"
+                    data-family="Giàu tình cảm"
+                    onclick="selectChoice('familyChoices',this)">
+                    <strong>♡ Giàu tình cảm</strong>
+                    <small>Gia đình là điểm tựa quan trọng.</small>
+                </button>
+
+            </div>
+
+            <label style="margin-top:15px">
+                Khuynh hướng tính cách
+            </label>
+
+            <select id="temperament">
+                <option>Tò mò</option>
+                <option>Thận trọng</option>
+                <option>Cởi mở</option>
+                <option>Kiên trì</option>
+                <option>Nhạy cảm</option>
+            </select>
+        </div>
+
+        <div class="panel col-12">
+            <div class="eyebrow">03 / Khởi hành</div>
+
+            <p class="muted">
+                Giai đoạn trước khi sinh được kể thông qua hoàn cảnh
+                và sự kiện xung quanh. Khi lớn lên, nhân vật sẽ dần
+                có thêm quyền chủ động quyết định cuộc sống.
+            </p>
+
+            <button class="primary" onclick="beginLife()">
+                Bắt đầu cuộc đời →
+            </button>
+
+            <button id="continueBtn"
+                onclick="continueSaved()"
+                style="display:none">
+                Tiếp tục cuộc đời đã lưu
+            </button>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- MÀN HÌNH CHƠI CHÍNH -->
+
+<section id="gameScreen" class="screen">
+
+    <div class="layout">
+
+        <div>
+
+            <div class="panel">
+
+                <div class="dayline">
+                    <span class="day" id="dateLabel">NGÀY 0</span>
+                    <span class="pill" id="ageLabel">Trước khi sinh</span>
+                </div>
+
+                <h2 id="sceneTitle">Một khởi đầu chưa được biết đến</h2>
+
+                <p id="sceneText" class="muted"></p>
+
+                <div class="event" id="eventBox"></div>
+
+                <div id="choiceArea"></div>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="dayline">
+                    <h2>Việc hôm nay</h2>
+                    <span id="activityHint" class="muted">
+                        Chọn một hành động
+                    </span>
+                </div>
+
+                <div id="activityList" class="activity-list"></div>
+
+                <div style="margin-top:15px">
+                    <button id="nextDayBtn"
+                        class="primary"
+                        onclick="nextDay()">
+                        Tiếp tục →
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <aside>
+
+            <div class="panel">
+
+                <div class="eyebrow">Trạng thái nhân vật</div>
+                <h2 id="profileName">An</h2>
+                <div id="profileTags"></div>
+                <div id="statsPanel" class="status-grid"></div>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="dayline">
+                    <h3>Những điều đã xảy ra</h3>
+                    <button onclick="openModal('historyModal')">
+                        Tất cả
+                    </button>
+                </div>
+
+                <div id="miniHistory" class="feed"></div>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="eyebrow">Hành trình</div>
+                <h3 id="lifeStage">Trước khi sinh</h3>
+
+                <div class="bar gold">
+                    <i id="lifeProgress" style="width:0%"></i>
+                </div>
+
+                <p class="muted" style="font-size:11px">
+                    Cuộc đời được hình thành từ hoàn cảnh,
+                    quyết định và những điều bất ngờ.
+                </p>
+
+            </div>
+
+        </aside>
+
+    </div>
+
+</section>
+
+
+<!-- MÀN HÌNH CUỐI ĐỜI -->
+
+<section id="endingScreen" class="screen">
+
+    <div class="panel hero">
+
+        <div class="eyebrow">Cuối một hành trình</div>
+
+        <h1>
+            Cuộc đời của
+            <span id="endingName" style="color:var(--gold)"></span>
+        </h1>
+
+        <p class="muted">
+            Không thể gói gọn một cuộc đời bằng một con số.
+            Đây là những dấu vết mà hành trình để lại.
+        </p>
+
+        <div id="memoir" class="memoir"></div>
+
+        <div style="margin-top:15px">
+            <button class="primary" onclick="newLife()">
+                Bắt đầu cuộc đời khác ↻
+            </button>
+
+            <button onclick="openModal('historyModal')">
+                Xem toàn bộ lịch sử
+            </button>
+        </div>
+
+    </div>
+
+</section>
+
+<div class="footer-note">
+    DECISION SIMULATOR · LIFE SIMULATION PROTOTYPE
+</div>
+
+</main>
+
+
+<!-- NHẬT KÝ -->
+
+<div class="modal-back" id="journalModal">
+    <div class="modal">
+
+        <div class="modal-head">
+            <h2>▤ Nhật ký cuộc đời</h2>
+            <button onclick="closeModal('journalModal')">✕</button>
+        </div>
+
+        <p class="muted">
+            Những sự kiện và lựa chọn được ghi lại theo thời gian.
+        </p>
+
+        <div id="journalContent" class="feed"></div>
+
+    </div>
+</div>
+
+
+<!-- HỒ SƠ -->
+
+<div class="modal-back" id="profileModal">
+    <div class="modal">
+
+        <div class="modal-head">
+            <h2>◈ Hồ sơ nhân vật</h2>
+            <button onclick="closeModal('profileModal')">✕</button>
+        </div>
+
+        <div id="profileContent"></div>
+
+        <button onclick="saveGame(true)">Lưu tiến trình</button>
+        <button onclick="exportSave()">Xuất bản lưu JSON</button>
+        <button onclick="resetGame()">Xóa tiến trình</button>
+
+    </div>
+</div>
+
+
+<!-- LỊCH SỬ -->
+
+<div class="modal-back" id="historyModal">
+    <div class="modal">
+
+        <div class="modal-head">
+            <h2>✦ Lịch sử hành trình</h2>
+            <button onclick="closeModal('historyModal')">✕</button>
+        </div>
+
+        <div id="historyContent" class="feed"></div>
+
+    </div>
+</div>
+
+
+<script>
+const SAVE_KEY = "decision_simulator_life_v05";
+
+const $ = id => document.getElementById(id);
+
+let game = null;
+
+
+/* CÁC HÀNH ĐỘNG HẰNG NGÀY */
+
+const activities = [
+    {
+        id: "study",
+        icon: "📚",
+        title: "Học tập / rèn kỹ năng",
+        desc: "Đầu tư cho kiến thức và cơ hội tương lai.",
+        effects: {
+            energy: -13,
+            learning: 8,
+            mood: -2
+        }
+    },
+    {
+        id: "rest",
+        icon: "☁️",
+        title: "Nghỉ ngơi",
+        desc: "Lấy lại sức và cân bằng cuộc sống.",
+        effects: {
+            energy: 18,
+            mood: 5
+        }
+    },
+    {
+        id: "friend",
+        icon: "♡",
+        title: "Dành thời gian cho bạn bè",
+        desc: "Nuôi dưỡng sự kết nối và kỷ niệm.",
+        effects: {
+            energy: -7,
+            relationships: 8,
+            mood: 6
+        }
+    },
+    {
+        id: "family",
+        icon: "⌂",
+        title: "Ở bên gia đình",
+        desc: "Chia sẻ thời gian và trò chuyện.",
+        effects: {
+            energy: -4,
+            family: 7,
+            mood: 4
+        }
+    },
+    {
+        id: "hobby",
+        icon: "✎",
+        title: "Theo đuổi sở thích",
+        desc: "Khám phá bản thân và phát triển kỹ năng.",
+        effects: {
+            energy: -8,
+            skills: 7,
+            mood: 8
+        }
+    },
+    {
+        id: "help",
+        icon: "✧",
+        title: "Giúp đỡ một người",
+        desc: "Dành thời gian cho người đang cần.",
+        effects: {
+            energy: -7,
+            relationships: 5,
+            meaning: 5,
+            mood: 3
+        }
+    }
+];
+
+
+/* CHỌN THIẾT LẬP */
+
+function selectChoice(groupId, button) {
+    $(groupId).querySelectorAll(".choice")
+        .forEach(item => item.classList.remove("selected"));
+
+    button.classList.add("selected");
+}
+
+function chosen(groupId, attribute) {
+    const button = $(groupId).querySelector(".selected");
+    return button ? button.dataset[attribute] : "";
+}
+
+
+/* KHỞI TẠO CUỘC ĐỜI */
+
+function beginLife() {
+
+    const name = $("charName").value.trim() || "An";
+
+    game = {
+        name: name,
+        gender: chosen("genderChoices", "gender") || "Nữ",
+        family: chosen("familyChoices", "family") || "Ổn định",
+        temperament: $("temperament").value,
+
+        day: 0,
+        age: 0,
+        stage: "Trước khi sinh",
+
+        stats: {
+            energy: 65,
+            mood: 60,
+            learning: 5,
+            skills: 8,
+            relationships: 10,
+            family: 35,
+            meaning: 5
+        },
+
+        history: [],
+        journal: [],
+        flags: {},
+        activityToday: null,
+        alive: true
+    };
+
+    log(
+        "Ngày 0",
+        "Hành trình bắt đầu. Hoàn cảnh gia đình: " +
+        game.family + ". Tính cách: " + game.temperament + "."
+    );
+
+    showScreen("gameScreen");
+
+    $("sceneTitle").textContent = "Một khởi đầu chưa được biết đến";
+
+    $("sceneText").textContent =
+        "Trước khi nhân vật có thể tự quyết định, cuộc sống được " +
+        "tạo nên từ hoàn cảnh gia đình và những sự kiện ngoài tầm kiểm soát.";
+
+    $("eventBox").innerHTML =
+        "<p>Gia đình đang chuẩn bị đón một thành viên mới. " +
+        "Những điều kiện ban đầu sẽ ảnh hưởng đến tuổi thơ, " +
+        "nhưng không viết sẵn toàn bộ tương lai.</p>";
+
+    $("choiceArea").innerHTML = `
+        <div class="choices">
+            <button class="choice" onclick="prenatalChoice('support')">
+                <strong>♡ Có thêm sự nâng đỡ</strong>
+                <small>Người thân cùng chia sẻ trách nhiệm.</small>
+            </button>
+
+            <button class="choice" onclick="prenatalChoice('change')">
+                <strong>◌ Một thay đổi bất ngờ</strong>
+                <small>Gia đình phải sắp xếp lại kế hoạch.</small>
+            </button>
+        </div>
+    `;
+
+    $("activityList").innerHTML =
+        "<p class='muted'>Ở giai đoạn này, nhân vật chưa tự lựa chọn. " +
+        "Hãy tiếp tục để câu chuyện tiến triển.</p>";
+
+    $("activityHint").textContent = "Giai đoạn trước khi sinh";
+    $("nextDayBtn").textContent = "Tiếp tục →";
+
+    render();
+    saveGame(false);
+}
+
+
+/* SỰ KIỆN TRƯỚC KHI SINH */
+
+function prenatalChoice(type) {
+
+    if (!game || game.day !== 0) return;
+
+    if (type === "support") {
+
+        game.stats.family = clamp(game.stats.family + 8);
+
+        log(
+            "Trước khi sinh",
+            "Gia đình nhận được sự hỗ trợ từ người thân."
+        );
+
+        $("eventBox").innerHTML =
+            "<p>Người thân chủ động chia sẻ công việc và động viên gia đình. " +
+            "Không phải mọi khó khăn đều biến mất, nhưng gia đình " +
+            "không phải đối mặt với tất cả một mình.</p>";
+
+    } else {
+
+        game.stats.mood = clamp(game.stats.mood - 3);
+
+        log(
+            "Trước khi sinh",
+            "Một thay đổi bất ngờ khiến gia đình phải sắp xếp lại kế hoạch."
+        );
+
+        $("eventBox").innerHTML =
+            "<p>Một kế hoạch của gia đình thay đổi vào phút cuối. " +
+            "Người lớn phải học cách thích nghi, còn tương lai vẫn chưa thể đoán trước.</p>";
+    }
+
+    render();
+}
+
+
+/* TIẾN TRÌNH THỜI GIAN */
+
+function nextDay() {
+
+    if (!game || !game.alive) return;
+
+    /*
+      Những năm đầu đời được mô phỏng theo từng năm,
+      tránh bắt người chơi bấm hàng nghìn lần trước khi
+      nhân vật đủ lớn để tự đưa ra quyết định.
+    */
+
+    if (game.day === 0) {
+
+        game.day = 1;
+        game.age = 0;
+        game.stage = "Sơ sinh";
+
+        log(
+            "Ngày 1",
+            game.name + " chào đời. Cuộc sống bắt đầu với sự chăm sóc của những người xung quanh."
+        );
+
+        renderBirth();
+        render();
+        saveGame(false);
+
+        return;
+    }
+
+    if (game.age < 3) {
+
+        game.age++;
+        game.day += 365;
+
+        updateStage();
+
+        log(
+            "Tuổi " + game.age,
+            "Một năm nữa trôi qua. Những trải nghiệm đầu đời dần hình thành."
+        );
+
+        renderEarlyYears();
+        render();
+        saveGame(false);
+
+        return;
+    }
+
+    if (game.activityToday === null) {
+
+        $("activityHint").textContent =
+            "Hãy chọn một hoạt động trước khi kết thúc ngày.";
+
+        return;
+    }
+
+    game.day++;
+    game.activityToday = null;
+
+    /*
+      Cứ đủ một năm trong trò chơi, nhân vật sẽ thêm tuổi.
+    */
+
+    if (game.day % 365 === 0) {
+
+        game.age++;
+        updateStage();
+        yearlyEvent();
+    }
+
+    /*
+      Trạng thái có thể ảnh hưởng đến những ngày tiếp theo.
+    */
+
+    if (game.stats.energy < 18) {
+
+        game.stats.mood = clamp(game.stats.mood - 3);
+
+        log(
+            "Một ngày mệt mỏi",
+            "Năng lượng thấp khiến các hoạt động thường ngày trở nên khó khăn."
+        );
+    }
+
+    if (game.age >= 80) {
+
+        endLife();
+        return;
+    }
+
+    render();
+    saveGame(false);
+}
+
+
+/* CHÀO ĐỜI */
+
+function renderBirth() {
+
+    $("dateLabel").textContent = "NGÀY 1 · CHÀO ĐỜI";
+    $("ageLabel").textContent = "Sơ sinh";
+
+    $("sceneTitle").textContent = "Thế giới đầu tiên";
+
+    $("sceneText").textContent =
+        game.name +
+        " chào đời trong một thế giới rộng lớn mà nhân vật chưa thể hiểu.";
+
+    $("eventBox").innerHTML =
+        "<p>Tiếng nói, ánh sáng, những vòng tay và nhịp sống của gia đình " +
+        "dần trở thành phần đầu tiên của câu chuyện. " +
+        "Môi trường sống đang để lại những dấu ấn ban đầu.</p>";
+
+    $("choiceArea").innerHTML =
+        "<span class='pill'>Gia đình: " + escapeHtml(game.family) + "</span>" +
+        "<span class='pill'>Tính cách: " + escapeHtml(game.temperament) + "</span>";
+
+    $("activityList").innerHTML =
+        "<p class='muted'>Trong những năm đầu đời, các sự kiện được kể " +
+        "theo môi trường chăm sóc. Quyền chủ động sẽ tăng dần khi nhân vật lớn lên.</p>";
+
+    $("activityHint").textContent = "Giai đoạn sơ sinh";
+    $("nextDayBtn").textContent = "Tiếp tục lớn lên →";
+}
+
+
+/* TUỔI THƠ */
+
+function renderEarlyYears() {
+
+    const scenes = {
+        1: {
+            title: "Những bước đầu tiên",
+            text: "Nhân vật bắt đầu khám phá thế giới xung quanh."
+        },
+        2: {
+            title: "Tò mò về mọi thứ",
+            text: "Những âm thanh, khuôn mặt và đồ vật quen thuộc dần trở nên có ý nghĩa."
+        },
+        3: {
+            title: "Thế giới mở rộng",
+            text: "Nhân vật bắt đầu thể hiện sở thích, cảm xúc và mong muốn riêng."
+        }
+    };
+
+    const scene = scenes[game.age];
+
+    $("dateLabel").textContent = "NĂM THỨ " + game.age;
+    $("ageLabel").textContent = "Tuổi " + game.age;
+
+    $("sceneTitle").textContent = scene.title;
+    $("sceneText").textContent = scene.text;
+
+    $("eventBox").innerHTML =
+        "<p>Hoàn cảnh gia đình và sự chăm sóc tiếp tục góp phần " +
+        "tạo nên những trải nghiệm đầu đời.</p>";
+
+    $("choiceArea").innerHTML = "";
+
+    $("activityList").innerHTML =
+        "<p class='muted'>Giai đoạn này chủ yếu được kể qua sự phát triển " +
+        "và môi trường sống. Các lựa chọn cá nhân sẽ mở rộng khi nhân vật lớn lên.</p>";
+
+    $("activityHint").textContent = "Giai đoạn đầu đời";
+    $("nextDayBtn").textContent = "Tiếp tục →";
+}
+
+
+/* CÁC GIAI ĐOẠN CUỘC ĐỜI */
+
+function updateStage() {
+
+    const age = game.age;
+
+    if (age < 3) game.stage = "Ấu nhi";
+    else if (age < 6) game.stage = "Mầm non";
+    else if (age < 11) game.stage = "Tiểu học";
+    else if (age < 15) game.stage = "THCS";
+    else if (age < 18) game.stage = "THPT";
+    else if (age < 25) game.stage = "Trưởng thành trẻ";
+    else if (age < 40) game.stage = "Xây dựng cuộc sống";
+    else if (age < 60) game.stage = "Trung niên";
+    else if (age < 75) game.stage = "Tuổi già";
+    else game.stage = "Cuối đời";
+
+    log(
+        "Sinh nhật tuổi " + age,
+        "Nhân vật bước sang tuổi " + age + ". Một giai đoạn mới mở ra."
+    );
+}
+
+
+/* SỰ KIỆN THEO CÁC MỐC TUỔI */
+
+function yearlyEvent() {
+
+    const events = {
+
+        6: [
+            "Ngày đầu đến trường",
+            "Một môi trường mới đem lại bạn bè, quy tắc và những trải nghiệm ngoài gia đình."
+        ],
+
+        11: [
+            "Những thay đổi",
+            "Bạn bè, việc học và mong muốn tự quyết bắt đầu trở nên quan trọng hơn."
+        ],
+
+        15: [
+            "Đứng giữa nhiều lựa chọn",
+            "Kỳ vọng từ bản thân, gia đình và nhà trường đôi khi không hoàn toàn giống nhau."
+        ],
+
+        18: [
+            "Ngưỡng cửa trưởng thành",
+            "Nhân vật bắt đầu suy nghĩ về học tập, nghề nghiệp và sự độc lập."
+        ],
+
+        22: [
+            "Một con đường riêng",
+            "Những lựa chọn bắt đầu để lại dấu ấn rõ hơn trong công việc và đời sống cá nhân."
+        ],
+
+        30: [
+            "Xây dựng điều bền vững",
+            "Công việc, tình cảm, gia đình và sức khỏe có thể đòi hỏi những ưu tiên khác nhau."
+        ],
+
+        45: [
+            "Nhìn lại giữa hành trình",
+            "Nhân vật có thêm trải nghiệm và có thể nhận ra những điều cần thay đổi."
+        ],
+
+        60: [
+            "Một nhịp sống khác",
+            "Thời gian, sức khỏe và các mối quan hệ thân thiết có thể trở thành ưu tiên mới."
+        ],
+
+        75: [
+            "Những điều còn lại",
+            "Nhân vật có dịp nhìn lại những người, nơi chốn và lựa chọn đã làm nên cuộc đời."
+        ]
+    };
+
+    if (events[game.age]) {
+
+        const event = events[game.age];
+
+        $("sceneTitle").textContent = event[0];
+        $("sceneText").textContent = event[1];
+
+        log(event[0], event[1]);
+
+    } else {
+
+        const genericEvents = [
+            "Một cơ hội bất ngờ xuất hiện.",
+            "Một mối quan hệ cần được quan tâm.",
+            "Nhân vật phải điều chỉnh kế hoạch trước một thay đổi.",
+            "Một việc nhỏ đem lại cảm giác tiến bộ."
+        ];
+
+        const message =
+            genericEvents[game.age % genericEvents.length];
+
+        $("sceneTitle").textContent = "Một năm mới";
+        $("sceneText").textContent = message;
+
+        log("Tuổi " + game.age, message);
+    }
+}
+
+
+/* LỰA CHỌN HOẠT ĐỘNG */
+
+function renderActivities() {
+
+    $("activityHint").textContent =
+        "Chọn một hoạt động mỗi ngày";
+
+    $("activityList").innerHTML = activities.map(activity => `
+
+        <button class="activity"
+            onclick="doActivity('${activity.id}')"
+            ${game.activityToday ? "disabled" : ""}>
+
+            <span class="activity-icon">${activity.icon}</span>
+
+            <span class="activity-body">
+                <strong>${activity.title}</strong>
+                <small>${activity.desc}</small>
+            </span>
+
+        </button>
+
+    `).join("");
+
+    $("nextDayBtn").textContent = "Kết thúc ngày →";
+}
+
+
+function doActivity(id) {
+
+    if (!game || game.activityToday) return;
+
+    const activity = activities.find(item => item.id === id);
+
+    if (!activity) return;
+
+    Object.entries(activity.effects).forEach(([key, value]) => {
+
+        game.stats[key] = clamp(game.stats[key] + value);
+
+    });
+
+    game.activityToday = id;
+
+    log(
+        "Lựa chọn: " + activity.title,
+        activity.desc + " Trạng thái nhân vật đã thay đổi."
+    );
+
+    if (
+        id === "friend" &&
+        game.stats.relationships > 25 &&
+        !game.flags.friendMemory
+    ) {
+
+        game.flags.friendMemory = true;
+
+        log(
+            "Một kỷ niệm mới",
+            "Một người bạn nhớ rằng " +
+            game.name + " đã dành thời gian cho họ."
+        );
+    }
+
+    if (id === "study" && game.stats.energy < 25) {
+
+        log(
+            "Cái giá của cố gắng",
+            "Cố gắng khi quá mệt có thể làm việc học kém hiệu quả."
+        );
+    }
+
+    render();
+
+    $("activityHint").textContent =
+        "Đã chọn: " + activity.title;
+
+    $("activityList").innerHTML = `
+        <div class="event">
+            <strong>${activity.title}</strong>
+            <p>${activity.desc}</p>
+            <p class="muted">
+                Bạn có thể kết thúc ngày để tiếp tục câu chuyện.
+            </p>
+        </div>
+    `;
+
+    saveGame(false);
+}
+
+
+/* NHẬT KÝ */
+
+function log(when, text) {
+
+    if (!game) return;
+
+    const item = {
+        when: when,
+        text: text,
+        day: game.day,
+        age: game.age
+    };
+
+    game.history.push(item);
+    game.journal.push(item);
+
+    if (game.history.length > 500) {
+        game.history.shift();
+    }
+
+    if (game.journal.length > 500) {
+        game.journal.shift();
+    }
+}
+
+
+function renderJournal() {
+
+    $("journalContent").innerHTML =
+        (game?.journal || [])
+        .slice()
+        .reverse()
+        .map(item => `
+
+            <div class="feed-item">
+                <time>
+                    ${escapeHtml(item.when)}
+                    · Ngày ${item.day}
+                    · Tuổi ${item.age}
+                </time>
+
+                ${escapeHtml(item.text)}
+            </div>
+
+        `)
+        .join("") || "<p>Nhật ký đang trống.</p>";
+}
+
+
+/* HỒ SƠ NHÂN VẬT */
+
+function renderProfile() {
+
+    if (!game) return;
+
+    $("profileContent").innerHTML = `
+
+        <p><strong>${escapeHtml(game.name)}</strong></p>
+
+        <p>
+            <span class="pill">${escapeHtml(game.gender)}</span>
+            <span class="pill">${escapeHtml(game.family)}</span>
+            <span class="pill">${escapeHtml(game.temperament)}</span>
+        </p>
+
+        <p>Tuổi: ${game.age}</p>
+        <p>Ngày: ${game.day}</p>
+        <p>Giai đoạn: ${escapeHtml(game.stage)}</p>
+
+        <p class="muted">
+            Các chỉ số phản ánh trạng thái trong trò chơi,
+            không phải thước đo giá trị của một con người.
+        </p>
+
+    `;
+}
+
+
+/* HIỂN THỊ CHỈ SỐ */
+
+function render() {
+
+    if (!game) return;
+
+    $("profileName").textContent = game.name;
+
+    $("profileTags").innerHTML = `
+        <span class="pill">${escapeHtml(game.gender)}</span>
+        <span class="pill">${escapeHtml(game.family)}</span>
+        <span class="pill">${escapeHtml(game.temperament)}</span>
+    `;
+
+    const stats = {
+        energy: ["Năng lượng", game.stats.energy, "mint"],
+        mood: ["Tâm trạng", game.stats.mood, "pink"],
+        learning: ["Học tập", game.stats.learning, "blue"],
+        skills: ["Kỹ năng", game.stats.skills, "gold"],
+        relationships: ["Bạn bè / quan hệ", game.stats.relationships, "mint"],
+        family: ["Gắn kết gia đình", game.stats.family, "pink"],
+        meaning: ["Ý nghĩa cá nhân", game.stats.meaning, "gold"]
+    };
+
+    $("statsPanel").innerHTML =
+        Object.values(stats).map(stat => `
+
+            <div class="stat">
+
+                <div class="stat-head">
+                    <span>${stat[0]}</span>
+                    <strong>${stat[1]}/100</strong>
+                </div>
+
+                <div class="bar ${stat[2]}">
+                    <i style="width:${stat[1]}%"></i>
+                </div>
+
+            </div>
+
+        `).join("");
+
+    $("dateLabel").textContent =
+        "NGÀY " + game.day + " · " + game.stage.toUpperCase();
+
+    $("ageLabel").textContent = "Tuổi " + game.age;
+
+    $("lifeStage").textContent = game.stage;
+
+    $("lifeProgress").style.width =
+        Math.min(100, game.age / 80 * 100) + "%";
+
+    if (game.age >= 3) {
+        renderActivities();
+    }
+
+    $("miniHistory").innerHTML =
+        game.history.slice(-5).reverse().map(item => `
+
+            <div class="feed-item">
+                <time>${escapeHtml(item.when)}</time>
+                ${escapeHtml(item.text)}
+            </div>
+
+        `).join("") || "<p class='muted'>Chưa có sự kiện nào.</p>";
+
+    renderJournal();
+    renderProfile();
+}
+
+
+/* GIAO DIỆN */
+
+function showScreen(id) {
+
+    document.querySelectorAll(".screen")
+        .forEach(screen => screen.classList.remove("active"));
+
+    $(id).classList.add("active");
+}
+
+
+function openModal(id) {
+
+    if (id === "journalModal") {
+        renderJournal();
+    }
+
+    if (id === "profileModal") {
+        renderProfile();
+    }
+
+    if (id === "historyModal") {
+
+        $("historyContent").innerHTML =
+            (game?.history || [])
+            .slice()
+            .reverse()
+            .map(item => `
+
+                <div class="feed-item">
+                    <time>
+                        ${escapeHtml(item.when)}
+                        · Ngày ${item.day}
+                        · Tuổi ${item.age}
+                    </time>
+
+                    ${escapeHtml(item.text)}
+                </div>
+
+            `)
+            .join("");
+    }
+
+    $(id).classList.add("show");
+}
+
+
+function closeModal(id) {
+    $(id).classList.remove("show");
+}
+
+
+/* TIỆN ÍCH */
+
+function clamp(value) {
+    return Math.max(0, Math.min(100, value));
+}
+
+
+function escapeHtml(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+
+    })[char]);
+}
+
+
+/* LƯU TIẾN TRÌNH */
+
+function saveGame(showMessage) {
+
+    if (!game) {
+
+        if (showMessage) {
+            alert("Chưa có cuộc đời để lưu.");
+        }
+
+        return;
+    }
+
+    try {
+
+        localStorage.setItem(
+            SAVE_KEY,
+            JSON.stringify(game)
+        );
+
+        if (showMessage) {
+            alert("Đã lưu tiến trình trên trình duyệt này.");
+        }
+
+    } catch (error) {
+
+        if (showMessage) {
+            alert("Không thể lưu. Hãy xuất bản lưu JSON.");
+        }
+    }
+
+    updateContinueButton();
+}
+
+
+function continueSaved() {
+
+    try {
+
+        const raw = localStorage.getItem(SAVE_KEY);
+
+        if (!raw) return;
+
+        game = JSON.parse(raw);
+
+        showScreen(game.alive ? "gameScreen" : "endingScreen");
+
+        if (game.alive) {
+            render();
+        } else {
+            renderEnding();
+        }
+
+    } catch (error) {
+
+        alert("Không thể đọc bản lưu.");
+    }
+}
+
+
+function updateContinueButton() {
+
+    try {
+
+        $("continueBtn").style.display =
+            localStorage.getItem(SAVE_KEY)
+                ? "inline-block"
+                : "none";
+
+    } catch (error) {}
+}
+
+
+function exportSave() {
+
+    if (!game) return;
+
+    const blob = new Blob(
+        [JSON.stringify(game, null, 2)],
+        { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "decision-simulator-save.json";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+}
+
+
+function resetGame() {
+
+    if (!confirm("Xóa cuộc đời đang lưu trên trình duyệt?")) {
+        return;
+    }
+
+    localStorage.removeItem(SAVE_KEY);
+
+    game = null;
+
+    closeModal("profileModal");
+    showScreen("setupScreen");
+
+    updateContinueButton();
+}
+
+
+function newLife() {
+
+    if (!confirm("Bắt đầu cuộc đời mới?")) {
+        return;
+    }
+
+    game = null;
+
+    showScreen("setupScreen");
+
+    $("charName").value = "";
+
+    updateContinueButton();
+}
+
+
+/* KẾT THÚC CUỘC ĐỜI */
+
+function endLife() {
+
+    game.alive = false;
+
+    log(
+        "Cuối đời",
+        "Hành trình của " + game.name + " khép lại."
+    );
+
+    saveGame(false);
+
+    showScreen("endingScreen");
+
+    renderEnding();
+}
+
+
+function renderEnding() {
+
+    $("endingName").textContent = game.name;
+
+    const highlights = game.history
+        .filter(item =>
+            /Lựa chọn:|Sinh nhật|kỷ niệm|cơ hội|Chào đời|Ngày đầu/.test(item.text)
+        )
+        .slice(0, 15)
+        .map(item => "- " + item.when + ": " + item.text)
+        .join("\n");
+
+    $("memoir").textContent =
+
+        game.name + " đã đi qua " + game.age + " năm cuộc đời.\n\n" +
+
+        "Điểm xuất phát: " + game.family + ".\n" +
+
+        "Khuynh hướng ban đầu: " + game.temperament + ".\n\n" +
+
+        "NHỮNG DẤU MỐC ĐƯỢC GHI LẠI:\n" +
+
+        (highlights || "- Một hành trình đã được bắt đầu.") +
+
+        "\n\nỞ cuối hành trình, những con số không thể nói thay tất cả. " +
+        "Điều còn lại là cách nhân vật đã sống, những người từng gặp " +
+        "và những điều đã chọn — cũng như những điều đã không chọn.";
+}
+
+
+updateContinueButton();
+
+</script>
+
+</body>
+</html>
