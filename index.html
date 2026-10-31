@@ -1,1746 +1,1452 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Decision Simulator — Một đời người</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Decision Simulator — Pixel Life</title>
 
 <style>
-:root {
-    --bg: #111827;
-    --panel: #1c2638;
-    --panel2: #243149;
-    --line: #394a63;
-    --text: #edf3ff;
-    --muted: #aab8d0;
-    --gold: #f4c96b;
-    --mint: #82e0c0;
-    --pink: #f3a5bd;
-    --blue: #9bc4ff;
+:root{
+  --bg:#101323;
+  --panel:#1b2038;
+  --panel2:#252b49;
+  --line:#444c73;
+  --text:#f3f1ff;
+  --muted:#a9b0d0;
+  --gold:#ffcf70;
+  --mint:#83e3bd;
+  --pink:#ff9fb8;
+  --blue:#8dc7ff;
+  --purple:#c6a5ff;
 }
-
-* {
-    box-sizing: border-box;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:monospace;
+  line-height:1.65;
+  image-rendering:pixelated;
 }
-
-body {
-    margin: 0;
-    background: radial-gradient(ellipse at top, #263650, #111827 65%);
-    color: var(--text);
-    font-family: monospace;
-    line-height: 1.6;
+button,input,select{font:inherit}
+button{
+  color:var(--text);
+  background:#303858;
+  border:2px solid #505a83;
+  padding:12px;
+  cursor:pointer;
+  box-shadow:0 4px 0 #111426;
 }
-
-button, input, select {
-    font: inherit;
+button:hover{background:#414a70}
+button:active{transform:translateY(2px);box-shadow:0 2px 0 #111426}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{
+  width:100%;
+  padding:12px;
+  margin:5px 0 15px;
+  color:var(--text);
+  background:#11162a;
+  border:2px solid var(--line);
 }
-
-button {
-    cursor: pointer;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    padding: 10px 13px;
-    background: #2b3b55;
-    color: var(--text);
+h1,h2,h3,p{margin-top:0}
+h1{font-size:clamp(27px,5vw,44px);line-height:1.25}
+h2{font-size:21px}
+small,.muted{color:var(--muted)}
+header{
+  padding:17px;
+  border-bottom:3px solid #303858;
+  background:#171b30;
 }
-
-button:hover {
-    filter: brightness(1.15);
+.header-inner,main{
+  max-width:1200px;
+  margin:auto;
 }
-
-button:disabled {
-    opacity: .45;
-    cursor: not-allowed;
+.header-inner{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
 }
-
-.primary {
-    background: var(--gold);
-    color: #25202a;
-    font-weight: bold;
+.logo{font-weight:bold;font-size:19px}
+.logo span{color:var(--gold)}
+.header-buttons{display:flex;gap:8px;flex-wrap:wrap}
+main{padding:22px 15px 50px}
+.screen{display:none}
+.screen.active{display:block}
+.panel{
+  background:var(--panel);
+  border:2px solid var(--line);
+  padding:17px;
+  margin-bottom:15px;
+  box-shadow:5px 5px 0 #090c18;
 }
-
-header {
-    max-width: 1200px;
-    margin: auto;
-    padding: 18px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+.hero{
+  padding:clamp(22px,5vw,45px);
+  background:
+    linear-gradient(135deg,#292448,#19243c 65%,#203e4b);
 }
-
-.brand {
-    font-size: 22px;
-    font-weight: bold;
+.kicker{
+  color:var(--mint);
+  letter-spacing:2px;
+  font-size:12px;
 }
-
-.brand span {
-    color: var(--gold);
+.pixel-scene{
+  min-height:155px;
+  border:3px solid #58648d;
+  margin:20px 0;
+  padding:20px;
+  background:
+    linear-gradient(180deg,#303b66 0%,#72557e 52%,#d38c84 53%,#39465c 54%,#25364a 100%);
+  display:flex;
+  align-items:flex-end;
+  gap:15px;
 }
-
-.top-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
+.pixel-person{
+  font-size:45px;
+  filter:drop-shadow(4px 4px 0 #182039);
 }
-
-main {
-    max-width: 1200px;
-    margin: auto;
-    padding: 10px 18px 35px;
+.pixel-caption{
+  padding:10px;
+  background:#12172bd9;
+  border:2px solid #7d86a8;
 }
-
-.screen {
-    display: none;
+.grid{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:15px;
 }
-
-.screen.active {
-    display: block;
+.span-12{grid-column:span 12}
+.span-7{grid-column:span 7}
+.span-5{grid-column:span 5}
+.layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.7fr) minmax(260px,.8fr);
+  gap:15px;
 }
-
-.panel {
-    background: linear-gradient(145deg, #243149, #182233);
-    border: 1px solid var(--line);
-    border-radius: 15px;
-    padding: 18px;
-    margin-bottom: 14px;
-    box-shadow: 0 12px 30px #0002;
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
 }
-
-.hero {
-    padding: 35px;
+.tag{
+  display:inline-block;
+  padding:3px 8px;
+  border:1px solid #657097;
+  background:#171d32;
+  color:var(--muted);
+  font-size:11px;
+  margin:2px;
 }
-
-h1 {
-    font-size: clamp(27px, 4vw, 42px);
-    line-height: 1.2;
+.gold{color:var(--gold)}
+.mint{color:var(--mint)}
+.pixel-line{height:4px;background:#3c4569;margin:12px 0}
+.event-box{
+  padding:17px;
+  background:#141a2d;
+  border-left:5px solid var(--gold);
+  margin:17px 0;
 }
-
-h2 {
-    font-size: 21px;
+.scene-art{
+  font-size:34px;
+  padding:15px 0;
 }
-
-h3 {
-    font-size: 16px;
+.choices{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:11px;
 }
-
-.muted {
-    color: var(--muted);
+.choice{
+  text-align:left;
+  min-height:115px;
+  background:#202844;
+  border-color:#465477;
 }
-
-.eyebrow {
-    color: var(--mint);
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+.choice strong{
+  display:block;
+  color:var(--gold);
+  margin-bottom:7px;
 }
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 14px;
+.choice small{display:block;line-height:1.5}
+.choice .choice-number{
+  float:right;
+  color:#8995bd;
+  font-size:12px;
 }
-
-.col-12 { grid-column: span 12; }
-.col-7  { grid-column: span 7; }
-.col-5  { grid-column: span 5; }
-
-label {
-    display: block;
-    color: var(--muted);
-    font-size: 13px;
-    margin-bottom: 6px;
+.choice:hover{border-color:var(--mint)}
+.choice:disabled{opacity:.5}
+.primary{
+  color:#171526;
+  background:var(--gold);
+  border-color:#ffe5a3;
+  font-weight:bold;
 }
-
-input[type="text"], select {
-    width: 100%;
-    background: #121c2b;
-    color: var(--text);
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    padding: 11px;
-    margin-bottom: 13px;
+.secondary{background:#263b47;border-color:#477c80}
+.danger{background:#45283b;border-color:#8a4b66}
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
 }
-
-.choices {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+.stat{
+  background:#11172a;
+  padding:10px;
+  border:1px solid #394464;
 }
-
-.choice {
-    text-align: left;
-    padding: 13px;
-    background: #19263a;
-    min-height: 75px;
+.stat-top{
+  display:flex;
+  justify-content:space-between;
+  font-size:11px;
+  gap:4px;
 }
-
-.choice strong {
-    display: block;
-    color: var(--gold);
-    margin-bottom: 4px;
+.bar{
+  height:8px;
+  margin-top:7px;
+  background:#333c5a;
 }
-
-.choice small {
-    color: var(--muted);
-    display: block;
+.bar i{display:block;height:100%;background:var(--mint)}
+.bar.goldbar i{background:var(--gold)}
+.bar.pinkbar i{background:var(--pink)}
+.bar.bluebar i{background:var(--blue)}
+.history{
+  display:grid;
+  gap:8px;
+  max-height:330px;
+  overflow:auto;
 }
-
-.choice.selected {
-    border-color: var(--mint);
-    background: #1d3b42;
-    box-shadow: inset 0 0 0 1px var(--mint);
+.history-item{
+  background:#13192b;
+  border:1px solid #343e5d;
+  padding:10px;
+  font-size:12px;
 }
-
-.pixel-scene {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-    border: 1px solid #33445c;
-    border-radius: 12px;
-    background: #101a29;
-    margin: 16px 0;
+.history-item time{
+  display:block;
+  color:var(--mint);
+  margin-bottom:5px;
+  font-size:10px;
 }
-
-.pixel-sun {
-    font-size: 42px;
-    color: var(--gold);
+.logbox{
+  padding:13px;
+  background:#171d32;
+  border:1px dashed #596589;
+  margin-top:15px;
 }
-
-.layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.65fr) minmax(270px, .9fr);
-    gap: 14px;
+.hidden{display:none!important}
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:20;
+  background:#080a15eF;
+  padding:20px;
+  align-items:center;
+  justify-content:center;
 }
-
-.dayline {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+.modal.open{display:flex}
+.modal-inner{
+  width:min(750px,100%);
+  max-height:85vh;
+  overflow:auto;
+  background:var(--panel);
+  border:3px solid var(--line);
+  padding:20px;
 }
-
-.day {
-    color: var(--gold);
-    font-weight: bold;
+.relationship{
+  padding:12px;
+  background:#141a2d;
+  border:1px solid var(--line);
+  margin:8px 0;
 }
-
-.event {
-    background: #151f30;
-    border-left: 3px solid var(--gold);
-    padding: 14px;
-    border-radius: 0 10px 10px 0;
-    margin: 14px 0;
+footer{
+  text-align:center;
+  color:#747e9f;
+  padding:25px;
+  font-size:11px;
 }
-
-.activity-list {
-    display: grid;
-    gap: 9px;
-}
-
-.activity {
-    width: 100%;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    text-align: left;
-    background: #1a283c;
-}
-
-.activity-icon {
-    font-size: 24px;
-}
-
-.activity-body {
-    flex: 1;
-}
-
-.activity-body strong {
-    display: block;
-}
-
-.activity-body small {
-    display: block;
-    color: var(--muted);
-}
-
-.status-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
-}
-
-.stat {
-    background: #111c2b;
-    border: 1px solid #31425a;
-    padding: 10px;
-    border-radius: 9px;
-}
-
-.stat-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 5px;
-    font-size: 11px;
-}
-
-.bar {
-    height: 7px;
-    background: #334158;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 8px;
-}
-
-.bar i {
-    display: block;
-    height: 100%;
-    background: var(--mint);
-}
-
-.bar.gold i { background: var(--gold); }
-.bar.pink i { background: var(--pink); }
-.bar.blue i { background: var(--blue); }
-
-.pill {
-    display: inline-block;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    padding: 3px 8px;
-    font-size: 11px;
-    color: var(--muted);
-    margin: 2px;
-}
-
-.feed {
-    display: grid;
-    gap: 8px;
-    max-height: 330px;
-    overflow-y: auto;
-}
-
-.feed-item {
-    background: #121d2d;
-    border: 1px solid #2d3d54;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 12px;
-}
-
-.feed-item time {
-    display: block;
-    color: var(--mint);
-    font-size: 10px;
-    margin-bottom: 5px;
-}
-
-.modal-back {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #060a11cc;
-    align-items: center;
-    justify-content: center;
-    padding: 15px;
-    z-index: 10;
-}
-
-.modal-back.show {
-    display: flex;
-}
-
-.modal {
-    width: min(650px, 100%);
-    max-height: 85vh;
-    overflow-y: auto;
-    background: #1c293d;
-    border: 1px solid var(--line);
-    border-radius: 15px;
-    padding: 20px;
-}
-
-.modal-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.memoir {
-    white-space: pre-wrap;
-    line-height: 1.8;
-    background: #111c2b;
-    border: 1px solid var(--line);
-    padding: 16px;
-    border-radius: 12px;
-}
-
-.footer-note {
-    text-align: center;
-    color: #8190a8;
-    font-size: 11px;
-    margin: 25px 0;
-}
-
-@media (max-width: 760px) {
-    .layout {
-        grid-template-columns: 1fr;
-    }
-
-    .col-7, .col-5 {
-        grid-column: span 12;
-    }
-
-    .choices {
-        grid-template-columns: 1fr;
-    }
-
-    .hero {
-        padding: 23px;
-    }
+@media(max-width:760px){
+  .layout{grid-template-columns:1fr}
+  .span-7,.span-5{grid-column:span 12}
+  .choices{grid-template-columns:1fr}
+  .choice{min-height:85px}
+  .pixel-scene{align-items:center}
 }
 </style>
 </head>
 
 <body>
-
 <header>
-    <div class="brand">✦ DECISION <span>SIMULATOR</span></div>
-
-    <div class="top-actions">
-        <button onclick="openModal('journalModal')">▤ Nhật ký</button>
-        <button onclick="openModal('profileModal')">◈ Hồ sơ</button>
-        <button onclick="saveGame(true)">⇩ Lưu</button>
+  <div class="header-inner">
+    <div class="logo">▣ DECISION <span>SIMULATOR</span></div>
+    <div class="header-buttons">
+      <button onclick="showModal('journalModal')">▤ Nhật ký</button>
+      <button onclick="showModal('peopleModal')">♙ Nhân vật</button>
+      <button onclick="saveGame(true)">↓ Lưu game</button>
     </div>
+  </div>
 </header>
 
 <main>
 
-<!-- MÀN HÌNH TẠO NHÂN VẬT -->
+<!-- TẠO NHÂN VẬT -->
+<section id="setup" class="screen active">
+  <div class="panel hero">
+    <div class="kicker">PIXEL LIFE SIMULATION · VERSION 0.6</div>
+    <h1>Một cuộc đời.<br><span class="gold">Hàng nghìn ngã rẽ.</span></h1>
+    <p class="muted">
+      Mỗi lựa chọn mở ra một khả năng. Mỗi khả năng có thể tạo ra
+      một tình huống mới. Không có cuộc đời nào được viết sẵn từ đầu.
+    </p>
 
-<section id="setupScreen" class="screen active">
+    <div class="pixel-scene">
+      <div class="pixel-person">♟</div>
+      <div class="pixel-caption">
+        <strong>NGÀY 0 — TRƯỚC KHI BẮT ĐẦU</strong><br>
+        <small>Một thế giới đang chờ nhân vật của bạn.</small>
+      </div>
+    </div>
+  </div>
 
-    <div class="panel hero">
-        <div class="eyebrow">A Life Simulation</div>
+  <div class="grid">
+    <div class="panel span-7">
+      <div class="kicker">01 / CHARACTER</div>
+      <h2>Tạo nhân vật</h2>
 
-        <h1>
-            Một cuộc đời.<br>
-            <span style="color:var(--gold)">Vô vàn ngã rẽ.</span>
-        </h1>
+      <label for="newName">Tên nhân vật</label>
+      <input id="newName" maxlength="24" value="An">
 
+      <label for="newGender">Giới tính nhân vật</label>
+      <select id="newGender">
+        <option>Nữ</option>
+        <option>Nam</option>
+        <option>Phi nhị nguyên</option>
+        <option>Tùy chỉnh</option>
+      </select>
+
+      <label for="newTemper">Khuynh hướng tính cách</label>
+      <select id="newTemper">
+        <option>Tò mò</option>
+        <option>Thận trọng</option>
+        <option>Cởi mở</option>
+        <option>Kiên trì</option>
+        <option>Nhạy cảm</option>
+        <option>Ưa độc lập</option>
+      </select>
+    </div>
+
+    <div class="panel span-5">
+      <div class="kicker">02 / BACKGROUND</div>
+      <h2>Hoàn cảnh ban đầu</h2>
+
+      <label for="newFamily">Gia đình</label>
+      <select id="newFamily">
+        <option value="stable">Ổn định</option>
+        <option value="poor">Kinh tế chật vật</option>
+        <option value="expect">Kỳ vọng cao</option>
+        <option value="warm">Giàu tình cảm</option>
+        <option value="busy">Cha mẹ bận rộn</option>
+      </select>
+
+      <label for="difficulty">Độ khó của cuộc đời</label>
+      <select id="difficulty">
+        <option value="story">Cân bằng — nhiều diễn biến</option>
+        <option value="easy">Nhẹ nhàng — dễ phục hồi</option>
+        <option value="hard">Thử thách — hệ quả kéo dài</option>
+      </select>
+    </div>
+
+    <div class="panel span-12">
+      <button class="primary" onclick="startGame()">BẮT ĐẦU CUỘC ĐỜI ▶</button>
+      <button onclick="loadGame()">Tiếp tục bản lưu</button>
+    </div>
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen">
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <div class="row">
+          <span id="dateLabel" class="gold">NGÀY 0</span>
+          <span id="ageLabel" class="tag">Trước khi sinh</span>
+        </div>
+
+        <div class="pixel-line"></div>
+        <div id="sceneArt" class="scene-art">☼</div>
+        <div class="kicker" id="chapterLabel">CHƯƠNG 0</div>
+        <h2 id="sceneTitle">Một khởi đầu</h2>
+        <p id="sceneText" class="muted"></p>
+
+        <div id="eventBox" class="event-box"></div>
+
+        <div class="row">
+          <h3 id="choiceHeading">Bạn sẽ làm gì?</h3>
+          <span id="choiceCounter" class="tag">5 lựa chọn</span>
+        </div>
+
+        <div id="choiceList" class="choices"></div>
+
+        <div id="resultBox" class="logbox hidden"></div>
+
+        <div class="row" style="margin-top:15px">
+          <button id="continueBtn" class="primary hidden" onclick="continueStory()">
+            Tiếp tục câu chuyện →
+          </button>
+          <button onclick="showModal('journalModal')">Đọc nhật ký</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="kicker">DAILY LIFE</div>
+        <h2>Đời sống thường ngày</h2>
         <p class="muted">
-            Bạn không chỉ chơi một trò chơi.
-            Bạn sẽ trải qua một cuộc đời, đưa ra những lựa chọn,
-            gặp gỡ những con người và nhìn thấy cách quá khứ
-            góp phần tạo nên hiện tại.
+          Ngoài các cốt truyện lớn, bạn có thể lựa chọn cách sử dụng thời gian.
+          Hành động thường ngày có thể ảnh hưởng đến trạng thái nhân vật.
         </p>
-
-        <div class="pixel-scene">
-            <div class="pixel-sun">☼</div>
-            <div>
-                <strong style="color:var(--gold)">
-                    NGÀY 0 — TRƯỚC KHI BẮT ĐẦU
-                </strong>
-                <br>
-                Một câu chuyện chưa được viết.
-                Một cuộc đời chưa biết sẽ đi về đâu.
-            </div>
-        </div>
+        <div id="dailyActions" class="choices"></div>
+      </div>
     </div>
 
-    <div class="grid">
+    <aside>
+      <div class="panel">
+        <div class="kicker">PLAYER STATUS</div>
+        <h2 id="playerName">An</h2>
+        <div id="playerTags"></div>
+        <div id="stats" class="stats"></div>
+      </div>
 
-        <div class="panel col-7">
-            <div class="eyebrow">01 / Nhân vật</div>
-            <h2>Ai sẽ sống cuộc đời này?</h2>
-
-            <label for="charName">Tên nhân vật</label>
-            <input id="charName" type="text" maxlength="24" value="An">
-
-            <label>Giới tính nhân vật</label>
-
-            <div class="choices" id="genderChoices">
-
-                <button class="choice selected"
-                    data-gender="Nữ"
-                    onclick="selectChoice('genderChoices',this)">
-                    <strong>♀ Nữ</strong>
-                    <small>Nhân vật nữ</small>
-                </button>
-
-                <button class="choice"
-                    data-gender="Nam"
-                    onclick="selectChoice('genderChoices',this)">
-                    <strong>♂ Nam</strong>
-                    <small>Nhân vật nam</small>
-                </button>
-
-                <button class="choice"
-                    data-gender="Phi nhị nguyên"
-                    onclick="selectChoice('genderChoices',this)">
-                    <strong>✧ Phi nhị nguyên</strong>
-                    <small>Một lựa chọn nhân vật khác</small>
-                </button>
-
-                <button class="choice"
-                    data-gender="Tùy chỉnh"
-                    onclick="selectChoice('genderChoices',this)">
-                    <strong>✎ Tùy chỉnh</strong>
-                    <small>Tự định nghĩa nhân vật</small>
-                </button>
-
-            </div>
-
-            <p class="muted" style="font-size:11px;margin-top:12px">
-                Đây là thiết lập nhân vật trong trò chơi.
-            </p>
+      <div class="panel">
+        <div class="row">
+          <h3>Người quen</h3>
+          <button onclick="showModal('peopleModal')">Xem</button>
         </div>
+        <div id="peopleMini"></div>
+      </div>
 
-        <div class="panel col-5">
-            <div class="eyebrow">02 / Điểm xuất phát</div>
-            <h2>Hoàn cảnh gia đình</h2>
+      <div class="panel">
+        <div class="kicker">LIFE JOURNAL</div>
+        <h3>Những dấu mốc gần đây</h3>
+        <div id="recentHistory" class="history"></div>
+      </div>
 
-            <div class="choices" id="familyChoices">
-
-                <button class="choice selected"
-                    data-family="Ổn định"
-                    onclick="selectChoice('familyChoices',this)">
-                    <strong>⌂ Gia đình ổn định</strong>
-                    <small>Nhu cầu cơ bản thường được đáp ứng.</small>
-                </button>
-
-                <button class="choice"
-                    data-family="Chật vật"
-                    onclick="selectChoice('familyChoices',this)">
-                    <strong>◌ Kinh tế chật vật</strong>
-                    <small>Nguồn lực hạn chế.</small>
-                </button>
-
-                <button class="choice"
-                    data-family="Kỳ vọng cao"
-                    onclick="selectChoice('familyChoices',this)">
-                    <strong>✦ Kỳ vọng cao</strong>
-                    <small>Nhiều cơ hội nhưng cũng có áp lực.</small>
-                </button>
-
-                <button class="choice"
-                    data-family="Giàu tình cảm"
-                    onclick="selectChoice('familyChoices',this)">
-                    <strong>♡ Giàu tình cảm</strong>
-                    <small>Gia đình là điểm tựa quan trọng.</small>
-                </button>
-
-            </div>
-
-            <label style="margin-top:15px">
-                Khuynh hướng tính cách
-            </label>
-
-            <select id="temperament">
-                <option>Tò mò</option>
-                <option>Thận trọng</option>
-                <option>Cởi mở</option>
-                <option>Kiên trì</option>
-                <option>Nhạy cảm</option>
-            </select>
-        </div>
-
-        <div class="panel col-12">
-            <div class="eyebrow">03 / Khởi hành</div>
-
-            <p class="muted">
-                Giai đoạn trước khi sinh được kể thông qua hoàn cảnh
-                và sự kiện xung quanh. Khi lớn lên, nhân vật sẽ dần
-                có thêm quyền chủ động quyết định cuộc sống.
-            </p>
-
-            <button class="primary" onclick="beginLife()">
-                Bắt đầu cuộc đời →
-            </button>
-
-            <button id="continueBtn"
-                onclick="continueSaved()"
-                style="display:none">
-                Tiếp tục cuộc đời đã lưu
-            </button>
-        </div>
-
-    </div>
-</section>
-
-
-<!-- MÀN HÌNH CHƠI CHÍNH -->
-
-<section id="gameScreen" class="screen">
-
-    <div class="layout">
-
-        <div>
-
-            <div class="panel">
-
-                <div class="dayline">
-                    <span class="day" id="dateLabel">NGÀY 0</span>
-                    <span class="pill" id="ageLabel">Trước khi sinh</span>
-                </div>
-
-                <h2 id="sceneTitle">Một khởi đầu chưa được biết đến</h2>
-
-                <p id="sceneText" class="muted"></p>
-
-                <div class="event" id="eventBox"></div>
-
-                <div id="choiceArea"></div>
-
-            </div>
-
-            <div class="panel">
-
-                <div class="dayline">
-                    <h2>Việc hôm nay</h2>
-                    <span id="activityHint" class="muted">
-                        Chọn một hành động
-                    </span>
-                </div>
-
-                <div id="activityList" class="activity-list"></div>
-
-                <div style="margin-top:15px">
-                    <button id="nextDayBtn"
-                        class="primary"
-                        onclick="nextDay()">
-                        Tiếp tục →
-                    </button>
-                </div>
-
-            </div>
-
-        </div>
-
-        <aside>
-
-            <div class="panel">
-
-                <div class="eyebrow">Trạng thái nhân vật</div>
-                <h2 id="profileName">An</h2>
-                <div id="profileTags"></div>
-                <div id="statsPanel" class="status-grid"></div>
-
-            </div>
-
-            <div class="panel">
-
-                <div class="dayline">
-                    <h3>Những điều đã xảy ra</h3>
-                    <button onclick="openModal('historyModal')">
-                        Tất cả
-                    </button>
-                </div>
-
-                <div id="miniHistory" class="feed"></div>
-
-            </div>
-
-            <div class="panel">
-
-                <div class="eyebrow">Hành trình</div>
-                <h3 id="lifeStage">Trước khi sinh</h3>
-
-                <div class="bar gold">
-                    <i id="lifeProgress" style="width:0%"></i>
-                </div>
-
-                <p class="muted" style="font-size:11px">
-                    Cuộc đời được hình thành từ hoàn cảnh,
-                    quyết định và những điều bất ngờ.
-                </p>
-
-            </div>
-
-        </aside>
-
-    </div>
-
-</section>
-
-
-<!-- MÀN HÌNH CUỐI ĐỜI -->
-
-<section id="endingScreen" class="screen">
-
-    <div class="panel hero">
-
-        <div class="eyebrow">Cuối một hành trình</div>
-
-        <h1>
-            Cuộc đời của
-            <span id="endingName" style="color:var(--gold)"></span>
-        </h1>
-
-        <p class="muted">
-            Không thể gói gọn một cuộc đời bằng một con số.
-            Đây là những dấu vết mà hành trình để lại.
+      <div class="panel">
+        <div class="kicker">LIFE PROGRESS</div>
+        <h3 id="stageLabel">Trước khi sinh</h3>
+        <div class="bar goldbar"><i id="lifeProgress" style="width:0%"></i></div>
+        <p class="muted" style="font-size:11px">
+          Quá khứ được lưu lại. Tương lai còn phụ thuộc vào những điều bạn chọn.
         </p>
-
-        <div id="memoir" class="memoir"></div>
-
-        <div style="margin-top:15px">
-            <button class="primary" onclick="newLife()">
-                Bắt đầu cuộc đời khác ↻
-            </button>
-
-            <button onclick="openModal('historyModal')">
-                Xem toàn bộ lịch sử
-            </button>
-        </div>
-
-    </div>
-
+      </div>
+    </aside>
+  </div>
 </section>
 
-<div class="footer-note">
-    DECISION SIMULATOR · LIFE SIMULATION PROTOTYPE
-</div>
+<!-- KẾT THÚC -->
+<section id="ending" class="screen">
+  <div class="panel hero">
+    <div class="kicker">THE END OF A LIFE</div>
+    <h1>Hành trình của <span id="endingName" class="gold"></span></h1>
+    <p class="muted">Một cuộc đời không thể chỉ được đo bằng thành công hay thất bại.</p>
+    <div id="memoir" class="event-box"></div>
+    <button class="primary" onclick="newLife()">Bắt đầu cuộc đời khác ↻</button>
+    <button onclick="showModal('journalModal')">Đọc lại nhật ký</button>
+  </div>
+</section>
 
 </main>
 
+<footer>DECISION SIMULATOR · PIXEL LIFE · LOCAL PROTOTYPE</footer>
 
 <!-- NHẬT KÝ -->
-
-<div class="modal-back" id="journalModal">
-    <div class="modal">
-
-        <div class="modal-head">
-            <h2>▤ Nhật ký cuộc đời</h2>
-            <button onclick="closeModal('journalModal')">✕</button>
-        </div>
-
-        <p class="muted">
-            Những sự kiện và lựa chọn được ghi lại theo thời gian.
-        </p>
-
-        <div id="journalContent" class="feed"></div>
-
+<div id="journalModal" class="modal">
+  <div class="modal-inner">
+    <div class="row">
+      <h2>▤ Nhật ký cuộc đời</h2>
+      <button onclick="hideModal('journalModal')">Đóng ✕</button>
     </div>
+    <p class="muted">Các quyết định, sự kiện và hệ quả đã được ghi lại.</p>
+    <div id="journalList" class="history"></div>
+  </div>
 </div>
 
-
-<!-- HỒ SƠ -->
-
-<div class="modal-back" id="profileModal">
-    <div class="modal">
-
-        <div class="modal-head">
-            <h2>◈ Hồ sơ nhân vật</h2>
-            <button onclick="closeModal('profileModal')">✕</button>
-        </div>
-
-        <div id="profileContent"></div>
-
-        <button onclick="saveGame(true)">Lưu tiến trình</button>
-        <button onclick="exportSave()">Xuất bản lưu JSON</button>
-        <button onclick="resetGame()">Xóa tiến trình</button>
-
+<!-- NHÂN VẬT PHỤ -->
+<div id="peopleModal" class="modal">
+  <div class="modal-inner">
+    <div class="row">
+      <h2>♙ Các mối quan hệ</h2>
+      <button onclick="hideModal('peopleModal')">Đóng ✕</button>
     </div>
+    <div id="peopleList"></div>
+  </div>
 </div>
-
-
-<!-- LỊCH SỬ -->
-
-<div class="modal-back" id="historyModal">
-    <div class="modal">
-
-        <div class="modal-head">
-            <h2>✦ Lịch sử hành trình</h2>
-            <button onclick="closeModal('historyModal')">✕</button>
-        </div>
-
-        <div id="historyContent" class="feed"></div>
-
-    </div>
-</div>
-
 
 <script>
-const SAVE_KEY = "decision_simulator_life_v05";
+"use strict";
 
-const $ = id => document.getElementById(id);
+const SAVE_KEY = "decision_pixel_life_06";
 
-let game = null;
+/*
+ Mỗi cảnh có ít nhất 5 lựa chọn.
+ Mỗi lựa chọn có thể dẫn tới một cảnh khác.
+ Mọi lựa chọn đều có thể có lợi ích và cái giá riêng.
+*/
+
+const STORY = {
+
+  birth: {
+    chapter: "CHƯƠNG 01 · KHỞI ĐẦU",
+    age: [0, 2],
+    art: "☼",
+    title: "Một thế giới mới",
+    text: "Nhân vật vừa chào đời. Những điều đầu tiên của cuộc sống đến từ hoàn cảnh và những người xung quanh.",
+    body: "Gia đình đang bước vào một giai đoạn mới. Những thay đổi nhỏ hôm nay sẽ định hình môi trường sống, nhưng chưa quyết định toàn bộ tương lai.",
+    choices: [
+      {
+        title: "Gia đình nhận sự giúp đỡ",
+        desc: "Người thân đề nghị cùng chia sẻ công việc.",
+        effects: { family: 8, mood: 3 },
+        next: "childHome",
+        outcome: "Sự hỗ trợ giúp gia đình bớt áp lực, nhưng mỗi người vẫn phải học cách thích nghi."
+      },
+      {
+        title: "Gia đình tự xoay xở",
+        desc: "Mọi người muốn tự giải quyết khó khăn.",
+        effects: { skills: 3, energy: -2 },
+        next: "childHome",
+        outcome: "Gia đình dần tìm ra nhịp sống riêng. Đôi khi, tự lập cũng đồng nghĩa với mệt mỏi."
+      },
+      {
+        title: "Một thay đổi về nơi ở",
+        desc: "Gia đình cân nhắc chuyển đến nơi khác.",
+        effects: { mood: -2, skills: 2 },
+        next: "childHome",
+        outcome: "Môi trường sống thay đổi. Một số điều quen thuộc mất đi, nhưng cơ hội mới cũng xuất hiện."
+      },
+      {
+        title: "Ưu tiên sự ổn định",
+        desc: "Gia đình giữ nếp sinh hoạt quen thuộc.",
+        effects: { family: 5, mood: 4 },
+        next: "childHome",
+        outcome: "Nếp sống đều đặn tạo cảm giác an toàn, dù không phải vấn đề nào cũng được giải quyết ngay."
+      },
+      {
+        title: "Đối diện bất đồng",
+        desc: "Người lớn chưa thống nhất cách chăm sóc.",
+        effects: { mood: -3, skills: 2 },
+        next: "childHome",
+        outcome: "Những bất đồng buộc gia đình phải học cách trao đổi và điều chỉnh kỳ vọng."
+      }
+    ]
+  },
+
+  childHome: {
+    chapter: "CHƯƠNG 02 · TUỔI THƠ",
+    age: [3, 7],
+    art: "🏡",
+    title: "Một ngày ở nhà",
+    text: "Nhân vật đã lớn hơn và bắt đầu thể hiện mong muốn của riêng mình.",
+    body: "Hôm nay có một chuyện nhỏ xảy ra trong gia đình. Người lớn đang bận, còn nhân vật muốn được chú ý. Cách mọi người phản ứng có thể ảnh hưởng đến cảm giác tin tưởng về sau.",
+    choices: [
+      {
+        title: "Chủ động giúp một việc nhỏ",
+        desc: "Làm điều vừa sức để chia sẻ công việc.",
+        effects: { family: 5, skills: 3, energy: -2 },
+        next: "schoolFirst",
+        outcome: "Người thân ghi nhận sự chủ động. Nhân vật cảm thấy mình có thể đóng góp."
+      },
+      {
+        title: "Nói rõ điều mình cần",
+        desc: "Thành thật bày tỏ mong muốn được quan tâm.",
+        effects: { mood: 5, family: 2 },
+        next: "schoolFirst",
+        outcome: "Một cuộc trò chuyện giúp gia đình hiểu nhau hơn, dù không phải mong muốn nào cũng được đáp ứng ngay."
+      },
+      {
+        title: "Tự chơi và khám phá",
+        desc: "Tìm một hoạt động khiến bản thân vui.",
+        effects: { skills: 5, mood: 3 },
+        next: "schoolFirst",
+        outcome: "Nhân vật tìm thấy niềm vui trong việc tự khám phá."
+      },
+      {
+        title: "Chờ người lớn chủ động",
+        desc: "Không nói gì và đợi mọi việc qua đi.",
+        effects: { energy: 2, mood: -2 },
+        next: "schoolFirst",
+        outcome: "Mâu thuẫn trước mắt không xảy ra, nhưng nhu cầu của nhân vật vẫn chưa được nói ra."
+      },
+      {
+        title: "Phản ứng khi thất vọng",
+        desc: "Thể hiện sự không hài lòng ngay lập tức.",
+        effects: { mood: -2, family: -2 },
+        next: "schoolFirst",
+        outcome: "Cảm xúc được bộc lộ, nhưng gia đình cần thời gian để hiểu điều gì thực sự khiến nhân vật buồn."
+      }
+    ]
+  },
+
+  schoolFirst: {
+    chapter: "CHƯƠNG 03 · NHỮNG NGÀY ĐI HỌC",
+    age: [6, 12],
+    art: "🏫",
+    title: "Ngày đầu đến trường",
+    text: "Một môi trường mới, nhiều gương mặt mới và những quy tắc chưa quen.",
+    body: "Trong lớp có một nhóm bạn đã thân nhau từ trước. Nhân vật chưa biết nên hòa nhập bằng cách nào. Cách bắt đầu một mối quan hệ không quyết định tất cả, nhưng có thể tạo ra những cơ hội khác nhau.",
+    choices: [
+      {
+        title: "Chủ động làm quen",
+        desc: "Bắt chuyện với một bạn ngồi gần.",
+        effects: { relationships: 7, mood: 3 },
+        next: "friendTrouble",
+        person: "Minh",
+        relation: 5,
+        outcome: "Một cuộc trò chuyện ngắn mở ra cơ hội làm quen."
+      },
+      {
+        title: "Quan sát trước khi tham gia",
+        desc: "Tìm hiểu mọi người và không vội vàng.",
+        effects: { skills: 3, mood: 1 },
+        next: "friendTrouble",
+        person: "Minh",
+        relation: 2,
+        outcome: "Nhân vật hiểu thêm về lớp trước khi chọn người muốn gần gũi."
+      },
+      {
+        title: "Tập trung vào bài học",
+        desc: "Ưu tiên làm quen với môi trường học tập.",
+        effects: { learning: 6, energy: -2 },
+        next: "studyPressure",
+        outcome: "Việc học giúp nhân vật có cảm giác làm chủ một phần môi trường mới."
+      },
+      {
+        title: "Tham gia hoạt động chung",
+        desc: "Đăng ký một hoạt động của lớp.",
+        effects: { relationships: 5, skills: 3, energy: -2 },
+        next: "friendTrouble",
+        person: "Minh",
+        relation: 4,
+        outcome: "Hoạt động chung giúp nhân vật có thêm cơ hội trò chuyện."
+      },
+      {
+        title: "Giữ khoảng cách một thời gian",
+        desc: "Chưa muốn thân thiết với ai.",
+        effects: { energy: 3, mood: -1 },
+        next: "studyPressure",
+        outcome: "Nhân vật có thời gian thích nghi, nhưng một số cơ hội kết bạn có thể đến chậm hơn."
+      }
+    ]
+  },
+
+  friendTrouble: {
+    chapter: "CHƯƠNG 04 · TÌNH BẠN",
+    age: [8, 17],
+    art: "♙",
+    title: "Một hiểu lầm trong nhóm bạn",
+    text: "Một người bạn nghĩ rằng nhân vật đã cố tình bỏ qua lời mời của mình.",
+    body: "Minh không nói thẳng điều đang khó chịu, nhưng bắt đầu ít trò chuyện hơn. Những người khác trong nhóm cũng nhận ra sự thay đổi. Nhân vật có thể chủ động giải quyết, chờ thêm thông tin hoặc chọn cách khác.",
+    choices: [
+      {
+        title: "Hỏi thẳng và lắng nghe",
+        desc: "Tìm hiểu điều gì khiến bạn buồn.",
+        effects: { relationships: 6, mood: 2 },
+        next: "groupProject",
+        person: "Minh",
+        relation: 8,
+        outcome: "Minh có cơ hội nói rõ cảm xúc. Hai người vẫn có thể bất đồng, nhưng đã bắt đầu hiểu nhau."
+      },
+      {
+        title: "Giải thích ngay lập tức",
+        desc: "Nói rõ lý do mình không tham gia.",
+        effects: { relationships: 2, energy: -1 },
+        next: "groupProject",
+        person: "Minh",
+        relation: 3,
+        outcome: "Thông tin được làm rõ, nhưng cảm xúc của Minh vẫn cần được lắng nghe."
+      },
+      {
+        title: "Nhờ một người trung gian",
+        desc: "Nhờ bạn chung giúp hai bên nói chuyện.",
+        effects: { relationships: 3, mood: 1 },
+        next: "groupProject",
+        person: "Minh",
+        relation: 4,
+        outcome: "Một người bạn chung giúp cuộc trò chuyện bắt đầu dễ dàng hơn, nhưng cần tránh để hiểu lầm lan rộng."
+      },
+      {
+        title: "Cho cả hai thời gian",
+        desc: "Không ép phải giải quyết ngay.",
+        effects: { energy: 2, relationships: -1 },
+        next: "groupProject",
+        person: "Minh",
+        relation: 0,
+        outcome: "Không khí bớt căng thẳng, nhưng vấn đề chưa được giải quyết."
+      },
+      {
+        title: "Chấp nhận mối quan hệ có thể thay đổi",
+        desc: "Không cố giữ mọi mối quan hệ bằng mọi giá.",
+        effects: { mood: 2, meaning: 3 },
+        next: "groupProject",
+        person: "Minh",
+        relation: -2,
+        outcome: "Nhân vật chấp nhận rằng không phải mối quan hệ nào cũng trở lại như cũ. Điều đó không có nghĩa những kỷ niệm trước đây vô giá trị."
+      }
+    ]
+  },
+
+  studyPressure: {
+    chapter: "CHƯƠNG 05 · ÁP LỰC",
+    age: [10, 20],
+    art: "📚",
+    title: "Bài kiểm tra sắp đến",
+    text: "Nhiều nhiệm vụ xuất hiện cùng lúc, còn thời gian thì có hạn.",
+    body: "Nhân vật cần ôn bài, hoàn thành một nhiệm vụ khác và vẫn muốn nghỉ ngơi. Không có đủ thời gian để làm mọi việc hoàn hảo. Câu hỏi là nên ưu tiên điều gì và chấp nhận đánh đổi ra sao.",
+    choices: [
+      {
+        title: "Lập thứ tự ưu tiên",
+        desc: "Làm việc quan trọng và cấp thiết trước.",
+        effects: { learning: 6, energy: -2, skills: 3 },
+        next: "examOutcome",
+        outcome: "Một kế hoạch rõ ràng giúp nhân vật biết việc nào cần làm trước và việc nào có thể để sau."
+      },
+      {
+        title: "Học liên tục đến khi xong",
+        desc: "Cố gắng hoàn thành nhiều nhất có thể.",
+        effects: { learning: 8, energy: -9, mood: -4 },
+        next: "examOutcome",
+        outcome: "Khối lượng ôn tập tăng lên, nhưng sự mệt mỏi cũng có thể làm giảm hiệu quả."
+      },
+      {
+        title: "Hỏi thầy cô hoặc bạn bè",
+        desc: "Tìm hỗ trợ ở phần chưa hiểu.",
+        effects: { learning: 5, relationships: 3 },
+        next: "examOutcome",
+        outcome: "Một lời giải thích đúng lúc giúp nhân vật tiết kiệm thời gian."
+      },
+      {
+        title: "Tạm nghỉ để hồi phục",
+        desc: "Nghỉ ngắn rồi quay lại học.",
+        effects: { energy: 8, mood: 5, learning: 1 },
+        next: "examOutcome",
+        outcome: "Nhân vật có thêm năng lượng. Phần việc chưa hoàn thành vẫn cần được sắp xếp lại."
+      },
+      {
+        title: "Bỏ qua phần khó",
+        desc: "Tập trung vào những phần dễ hoàn thành.",
+        effects: { energy: 3, learning: 2 },
+        next: "examOutcome",
+        outcome: "Một số nhiệm vụ được hoàn thành nhanh, nhưng phần kiến thức khó vẫn còn đó."
+      }
+    ]
+  },
+
+  examOutcome: {
+    chapter: "CHƯƠNG 06 · HỆ QUẢ",
+    age: [10, 22],
+    art: "✎",
+    title: "Kết quả không hoàn toàn như dự kiến",
+    text: "Nhân vật nhận được kết quả sau một thời gian chuẩn bị.",
+    body: "Kết quả không chỉ phụ thuộc vào một quyết định. Mức độ chuẩn bị, hoàn cảnh và những yếu tố bất ngờ đều có thể góp phần tạo nên kết quả.",
+    choices: [
+      {
+        title: "Xem lại lỗi sai",
+        desc: "Tìm nguyên nhân và điều chỉnh cách học.",
+        effects: { learning: 6, skills: 4 },
+        next: "futureChoice",
+        outcome: "Nhân vật biến kết quả thành thông tin để điều chỉnh kế hoạch tiếp theo."
+      },
+      {
+        title: "Xin nhận xét cụ thể",
+        desc: "Hỏi người có kinh nghiệm về điểm cần cải thiện.",
+        effects: { learning: 4, relationships: 3 },
+        next: "futureChoice",
+        outcome: "Nhận xét từ người khác cung cấp một góc nhìn mới."
+      },
+      {
+        title: "Nghỉ ngơi rồi đánh giá",
+        desc: "Không vội kết luận khi cảm xúc còn mạnh.",
+        effects: { energy: 6, mood: 4 },
+        next: "futureChoice",
+        outcome: "Nhân vật có thêm khoảng cách để nhìn nhận kết quả bình tĩnh hơn."
+      },
+      {
+        title: "Thử một phương pháp khác",
+        desc: "Thay đổi cách chuẩn bị cho lần sau.",
+        effects: { skills: 6, learning: 3, energy: -2 },
+        next: "futureChoice",
+        outcome: "Một cách làm mới có thể hiệu quả hơn, nhưng cũng cần thời gian để kiểm chứng."
+      },
+      {
+        title: "Chấp nhận kết quả hiện tại",
+        desc: "Không để một lần kiểm tra quyết định toàn bộ giá trị bản thân.",
+        effects: { mood: 6, meaning: 3 },
+        next: "futureChoice",
+        outcome: "Nhân vật chấp nhận điều đã xảy ra và dành sức lực cho những mục tiêu tiếp theo."
+      }
+    ]
+  },
+
+  groupProject: {
+    chapter: "CHƯƠNG 07 · TRÁCH NHIỆM",
+    age: [12, 22],
+    art: "▤",
+    title: "Bài tập nhóm gặp trục trặc",
+    text: "Một thành viên chưa hoàn thành phần việc. Hạn nộp đang đến gần.",
+    body: "Nếu làm thay, cả nhóm có thể kịp tiến độ nhưng sự phân công sẽ mất cân bằng. Nếu báo giáo viên, vấn đề có thể được giải quyết nhưng quan hệ trong nhóm có thể căng thẳng. Nhân vật cần cân nhắc cả kết quả lẫn cách đối xử với người khác.",
+    choices: [
+      {
+        title: "Trao đổi riêng với thành viên",
+        desc: "Tìm hiểu nguyên nhân và thống nhất thời hạn mới.",
+        effects: { relationships: 5, skills: 3, energy: -2 },
+        next: "futureChoice",
+        person: "Minh",
+        relation: 2,
+        outcome: "Một cuộc trao đổi rõ ràng tạo cơ hội sửa chữa trước khi vấn đề nghiêm trọng hơn."
+      },
+      {
+        title: "Chia lại phần việc",
+        desc: "Điều chỉnh nhiệm vụ để cả nhóm hoàn thành.",
+        effects: { skills: 5, energy: -4 },
+        next: "futureChoice",
+        outcome: "Tiến độ được cải thiện, nhưng nhóm cần đảm bảo sự phân chia vẫn công bằng."
+      },
+      {
+        title: "Báo giáo viên phụ trách",
+        desc: "Nhờ người có trách nhiệm hỗ trợ xử lý.",
+        effects: { skills: 3, relationships: -1 },
+        next: "futureChoice",
+        outcome: "Giáo viên có thể can thiệp, nhưng cách giải quyết cần dựa trên thông tin đầy đủ."
+      },
+      {
+        title: "Tự làm phần còn thiếu",
+        desc: "Ưu tiên hoàn thành bài đúng hạn.",
+        effects: { learning: 3, energy: -8, mood: -3 },
+        next: "futureChoice",
+        outcome: "Bài có thể hoàn thành, nhưng cách xử lý này khó duy trì nếu trở thành thói quen."
+      },
+      {
+        title: "Giữ nguyên phân công",
+        desc: "Để mỗi người chịu trách nhiệm phần mình.",
+        effects: { skills: 2, energy: 1 },
+        next: "futureChoice",
+        outcome: "Trách nhiệm cá nhân được giữ nguyên. Tuy nhiên, nhóm cần chuẩn bị phương án nếu tiến độ tiếp tục chậm."
+      }
+    ]
+  },
+
+  futureChoice: {
+    chapter: "CHƯƠNG 08 · TƯƠNG LAI",
+    age: [15, 30],
+    art: "🌆",
+    title: "Ngã rẽ đầu tiên",
+    text: "Nhân vật phải chọn điều gì đáng để đầu tư thời gian trong giai đoạn tiếp theo.",
+    body: "Một cơ hội học tập hoặc công việc xuất hiện. Nhân vật cũng có những mối quan hệ và sở thích riêng. Không thể dành toàn bộ thời gian cho mọi mục tiêu cùng lúc.",
+    choices: [
+      {
+        title: "Ưu tiên học tập",
+        desc: "Tập trung xây nền tảng cho tương lai.",
+        effects: { learning: 7, energy: -3, skills: 2 },
+        next: "career",
+        outcome: "Kiến thức được củng cố, nhưng nhân vật cần nhớ rằng cuộc sống còn những phần khác."
+      },
+      {
+        title: "Thử sức ở môi trường mới",
+        desc: "Chấp nhận một mức độ bất định để học hỏi.",
+        effects: { skills: 7, relationships: 3, energy: -3 },
+        next: "career",
+        outcome: "Trải nghiệm mới đem lại bài học mà việc chỉ ở trong vùng quen thuộc khó có được."
+      },
+      {
+        title: "Dành thời gian cho người thân",
+        desc: "Củng cố những mối quan hệ quan trọng.",
+        effects: { family: 6, mood: 4 },
+        next: "career",
+        outcome: "Nhân vật nuôi dưỡng một phần cuộc sống không thể thay thế bằng thành tích."
+      },
+      {
+        title: "Khám phá sở thích cá nhân",
+        desc: "Tìm hiểu điều khiến bản thân hứng thú.",
+        effects: { skills: 5, mood: 6, meaning: 3 },
+        next: "career",
+        outcome: "Sở thích có thể trở thành nguồn vui hoặc mở ra một hướng đi mới."
+      },
+      {
+        title: "Đi chậm và quan sát",
+        desc: "Chưa cam kết với một hướng đi dài hạn.",
+        effects: { energy: 4, mood: 2, meaning: 2 },
+        next: "career",
+        outcome: "Nhân vật có thêm thời gian cân nhắc, nhưng cần quay lại đánh giá khi đã có đủ thông tin."
+      }
+    ]
+  },
+
+  career: {
+    chapter: "CHƯƠNG 09 · TRƯỞNG THÀNH",
+    age: [18, 50],
+    art: "🏙",
+    title: "Công việc và cuộc sống",
+    text: "Một cơ hội mới đòi hỏi nhân vật quyết định cách sử dụng thời gian và năng lực.",
+    body: "Mức lương, cơ hội học hỏi, sự ổn định, thời gian riêng và những người xung quanh đều có ý nghĩa. Không có lựa chọn nào tốt nhất cho mọi người.",
+    choices: [
+      {
+        title: "Chọn sự ổn định",
+        desc: "Ưu tiên thu nhập đều đặn và lịch sinh hoạt rõ ràng.",
+        effects: { mood: 3, energy: 2, meaning: 1 },
+        next: "midlife",
+        outcome: "Sự ổn định giúp nhân vật lập kế hoạch, nhưng cơ hội phát triển có thể đến chậm hơn."
+      },
+      {
+        title: "Chấp nhận thử thách lớn",
+        desc: "Đổi sự thoải mái lấy khả năng phát triển.",
+        effects: { skills: 7, energy: -5, learning: 4 },
+        next: "midlife",
+        outcome: "Thử thách giúp nhân vật trưởng thành, đồng thời đòi hỏi sự cân bằng để không kiệt sức."
+      },
+      {
+        title: "Tiếp tục học hỏi",
+        desc: "Đầu tư vào kiến thức và kỹ năng mới.",
+        effects: { learning: 6, skills: 5, energy: -3 },
+        next: "midlife",
+        outcome: "Năng lực tăng lên, nhưng kết quả cần thời gian để xuất hiện."
+      },
+      {
+        title: "Ưu tiên cuộc sống cá nhân",
+        desc: "Bảo vệ thời gian cho sức khỏe và các mối quan hệ.",
+        effects: { mood: 6, relationships: 4, energy: 3 },
+        next: "midlife",
+        outcome: "Nhân vật giữ được không gian riêng, dù có thể phải từ chối một vài cơ hội."
+      },
+      {
+        title: "Tự tạo hướng đi riêng",
+        desc: "Thử một dự án hoặc con đường ít quen thuộc.",
+        effects: { skills: 5, meaning: 6, energy: -5 },
+        next: "midlife",
+        outcome: "Sự độc lập đem lại cảm giác chủ động, nhưng kết quả không được bảo đảm."
+      }
+    ]
+  },
+
+  midlife: {
+    chapter: "CHƯƠNG 10 · NHÌN LẠI",
+    age: [35, 65],
+    art: "🌄",
+    title: "Điều gì thực sự quan trọng?",
+    text: "Nhân vật nhận ra rằng thời gian và sức lực đều có giới hạn.",
+    body: "Một số mục tiêu đã đạt được, một số vẫn còn dang dở. Nhân vật có thể tiếp tục theo đuổi kế hoạch cũ, thay đổi ưu tiên hoặc dành thời gian cho điều đã bị bỏ quên.",
+    choices: [
+      {
+        title: "Tiếp tục mục tiêu lâu năm",
+        desc: "Hoàn thành điều đã theo đuổi từ trước.",
+        effects: { meaning: 6, energy: -3, skills: 2 },
+        next: "elder",
+        outcome: "Một mục tiêu lâu năm có thể đem lại sự thỏa mãn, nhưng cần cân nhắc nguồn lực hiện tại."
+      },
+      {
+        title: "Sửa lại những mối quan hệ",
+        desc: "Chủ động liên lạc và dành thời gian cho người thân.",
+        effects: { relationships: 6, family: 5, mood: 3 },
+        next: "elder",
+        outcome: "Một lời hỏi thăm hoặc cuộc trò chuyện có thể mở ra cơ hội kết nối lại."
+      },
+      {
+        title: "Bắt đầu một điều mới",
+        desc: "Cho phép bản thân học hoặc làm điều chưa từng thử.",
+        effects: { skills: 5, meaning: 5, energy: -2 },
+        next: "elder",
+        outcome: "Một khởi đầu mới không xóa bỏ quá khứ, nhưng có thể làm hiện tại phong phú hơn."
+      },
+      {
+        title: "Giảm bớt trách nhiệm",
+        desc: "Chọn điều cần giữ và điều có thể buông.",
+        effects: { energy: 6, mood: 4 },
+        next: "elder",
+        outcome: "Nhân vật có thêm thời gian cho những điều thiết yếu, dù phải chấp nhận một số thay đổi."
+      },
+      {
+        title: "Chia sẻ kinh nghiệm",
+        desc: "Hỗ trợ người trẻ hơn từ những điều đã học được.",
+        effects: { relationships: 4, meaning: 7 },
+        next: "elder",
+        outcome: "Kinh nghiệm cá nhân trở thành điều có ích cho người khác."
+      }
+    ]
+  },
+
+  elder: {
+    chapter: "CHƯƠNG 11 · TUỔI GIÀ",
+    age: [60, 79],
+    art: "🌅",
+    title: "Những ngày chậm lại",
+    text: "Nhân vật nhìn lại các mối quan hệ, những điều đã làm và những điều còn muốn trải nghiệm.",
+    body: "Có những việc không thể quay lại để làm khác đi. Nhưng hiện tại vẫn có thể được sử dụng để kết nối, học hỏi, chia sẻ và chăm sóc bản thân.",
+    choices: [
+      {
+        title: "Ghi lại câu chuyện cuộc đời",
+        desc: "Viết những điều muốn truyền lại.",
+        effects: { meaning: 7, skills: 2 },
+        next: "elder",
+        outcome: "Những ký ức được sắp xếp thành một câu chuyện có ý nghĩa với nhân vật."
+      },
+      {
+        title: "Gặp lại người cũ",
+        desc: "Chủ động nối lại một mối quan hệ.",
+        effects: { relationships: 6, mood: 4 },
+        next: "elder",
+        outcome: "Cuộc gặp có thể đem lại niềm vui, sự bất ngờ hoặc một lời tạm biệt cần thiết."
+      },
+      {
+        title: "Học một điều chưa biết",
+        desc: "Tiếp tục nuôi dưỡng sự tò mò.",
+        effects: { learning: 4, mood: 4 },
+        next: "elder",
+        outcome: "Nhân vật khám phá rằng việc học hỏi không chỉ thuộc về tuổi trẻ."
+      },
+      {
+        title: "Dành thời gian cho gia đình",
+        desc: "Chia sẻ những khoảnh khắc bình thường.",
+        effects: { family: 6, relationships: 3 },
+        next: "elder",
+        outcome: "Những khoảnh khắc giản dị trở thành một phần quan trọng của ký ức."
+      },
+      {
+        title: "Sắp xếp điều còn dang dở",
+        desc: "Giải quyết những việc vẫn khiến mình bận tâm.",
+        effects: { meaning: 5, mood: 3 },
+        next: "elder",
+        outcome: "Không phải mọi việc đều có thể hoàn tất, nhưng nhân vật có thể chọn điều cần ưu tiên."
+      }
+    ]
+  }
+};
 
 
-/* CÁC HÀNH ĐỘNG HẰNG NGÀY */
+/* TRẠNG THÁI GAME */
 
-const activities = [
-    {
-        id: "study",
-        icon: "📚",
-        title: "Học tập / rèn kỹ năng",
-        desc: "Đầu tư cho kiến thức và cơ hội tương lai.",
-        effects: {
-            energy: -13,
-            learning: 8,
-            mood: -2
-        }
-    },
-    {
-        id: "rest",
-        icon: "☁️",
-        title: "Nghỉ ngơi",
-        desc: "Lấy lại sức và cân bằng cuộc sống.",
-        effects: {
-            energy: 18,
-            mood: 5
-        }
-    },
-    {
-        id: "friend",
-        icon: "♡",
-        title: "Dành thời gian cho bạn bè",
-        desc: "Nuôi dưỡng sự kết nối và kỷ niệm.",
-        effects: {
-            energy: -7,
-            relationships: 8,
-            mood: 6
-        }
-    },
-    {
-        id: "family",
-        icon: "⌂",
-        title: "Ở bên gia đình",
-        desc: "Chia sẻ thời gian và trò chuyện.",
-        effects: {
-            energy: -4,
-            family: 7,
-            mood: 4
-        }
-    },
-    {
-        id: "hobby",
-        icon: "✎",
-        title: "Theo đuổi sở thích",
-        desc: "Khám phá bản thân và phát triển kỹ năng.",
-        effects: {
-            energy: -8,
-            skills: 7,
-            mood: 8
-        }
-    },
-    {
-        id: "help",
-        icon: "✧",
-        title: "Giúp đỡ một người",
-        desc: "Dành thời gian cho người đang cần.",
-        effects: {
-            energy: -7,
-            relationships: 5,
-            meaning: 5,
-            mood: 3
-        }
-    }
+let G = null;
+
+const DAILY = [
+  {
+    title:"Học hoặc rèn kỹ năng",
+    desc:"Đầu tư thời gian cho kiến thức.",
+    icon:"▤",
+    effects:{learning:5,skills:2,energy:-5}
+  },
+  {
+    title:"Nghỉ ngơi",
+    desc:"Hồi phục sức lực.",
+    icon:"☾",
+    effects:{energy:9,mood:3}
+  },
+  {
+    title:"Gặp gỡ bạn bè",
+    desc:"Nuôi dưỡng mối quan hệ.",
+    icon:"♙",
+    effects:{relationships:4,mood:3,energy:-2}
+  },
+  {
+    title:"Dành thời gian cho gia đình",
+    desc:"Trò chuyện và chia sẻ.",
+    icon:"⌂",
+    effects:{family:4,mood:2}
+  },
+  {
+    title:"Theo đuổi sở thích",
+    desc:"Làm điều khiến bản thân hứng thú.",
+    icon:"✧",
+    effects:{skills:3,mood:5,energy:-2}
+  }
 ];
 
+function clamp(n){return Math.max(0,Math.min(100,n));}
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+function screen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function modal(id,open){
+  document.getElementById(id).classList.toggle("open",open);
+}
+function showModal(id){
+  renderModals();
+  modal(id,true);
+}
+function hideModal(id){modal(id,false);}
 
-/* CHỌN THIẾT LẬP */
+function startGame(){
+  G={
+    name:document.getElementById("newName").value.trim()||"An",
+    gender:document.getElementById("newGender").value,
+    temperament:document.getElementById("newTemper").value,
+    family:document.getElementById("newFamily").value,
+    difficulty:document.getElementById("difficulty").value,
+    day:0,age:0,stage:"Trước khi sinh",
+    stats:{
+      energy:65,mood:60,learning:5,skills:8,
+      relationships:10,family:35,meaning:5,money:25
+    },
+    flags:{},people:{},history:[],journal:[],
+    scene:"birth",pending:null,finished:false
+  };
 
-function selectChoice(groupId, button) {
-    $(groupId).querySelectorAll(".choice")
-        .forEach(item => item.classList.remove("selected"));
+  G.people["Gia đình"]={score:35,memory:[]};
 
-    button.classList.add("selected");
+  record("Ngày 0","Cuộc đời bắt đầu trong hoàn cảnh gia đình: "+familyName()+".");
+  screen("game");
+  showScene("birth");
+  render();
+  saveGame(false);
 }
 
-function chosen(groupId, attribute) {
-    const button = $(groupId).querySelector(".selected");
-    return button ? button.dataset[attribute] : "";
+function familyName(){
+  return ({
+    stable:"gia đình ổn định",
+    poor:"gia đình có nguồn lực hạn chế",
+    expect:"gia đình có kỳ vọng cao",
+    warm:"gia đình giàu tình cảm",
+    busy:"gia đình bận rộn"
+  })[G.family]||G.family;
 }
 
+function currentStage(){
+  if(G.age<3)return "Ấu nhi";
+  if(G.age<6)return "Mầm non";
+  if(G.age<11)return "Tiểu học";
+  if(G.age<15)return "THCS";
+  if(G.age<18)return "THPT";
+  if(G.age<25)return "Trưởng thành trẻ";
+  if(G.age<40)return "Xây dựng cuộc sống";
+  if(G.age<60)return "Trung niên";
+  if(G.age<75)return "Tuổi già";
+  return "Cuối đời";
+}
 
-/* KHỞI TẠO CUỘC ĐỜI */
+/* Mở một cảnh */
+function showScene(key){
+  if(!G||!STORY[key])return;
 
-function beginLife() {
+  G.scene=key;
+  G.pending=null;
 
-    const name = $("charName").value.trim() || "An";
+  const s=STORY[key];
+  G.stage=currentStage();
 
-    game = {
-        name: name,
-        gender: chosen("genderChoices", "gender") || "Nữ",
-        family: chosen("familyChoices", "family") || "Ổn định",
-        temperament: $("temperament").value,
+  document.getElementById("chapterLabel").textContent=s.chapter;
+  document.getElementById("sceneArt").textContent=s.art;
+  document.getElementById("sceneTitle").textContent=s.title;
+  document.getElementById("sceneText").textContent=s.text;
+  document.getElementById("eventBox").textContent=s.body;
+  document.getElementById("choiceHeading").textContent="Bạn sẽ lựa chọn thế nào?";
+  document.getElementById("choiceCounter").textContent=s.choices.length+" lựa chọn";
 
-        day: 0,
-        age: 0,
-        stage: "Trước khi sinh",
+  document.getElementById("choiceList").innerHTML=s.choices.map((c,i)=>`
+    <button class="choice" onclick="choose(${i})">
+      <span class="choice-number">0${i+1}</span>
+      <strong>${esc(c.title)}</strong>
+      <small>${esc(c.desc)}</small>
+    </button>
+  `).join("");
 
-        stats: {
-            energy: 65,
-            mood: 60,
-            learning: 5,
-            skills: 8,
-            relationships: 10,
-            family: 35,
-            meaning: 5
-        },
+  document.getElementById("resultBox").classList.add("hidden");
+  document.getElementById("continueBtn").classList.add("hidden");
 
-        history: [],
-        journal: [],
-        flags: {},
-        activityToday: null,
-        alive: true
-    };
+  G.history.push({
+    type:"scene",scene:key,title:s.title,day:G.day,age:G.age
+  });
+  render();
+}
 
-    log(
-        "Ngày 0",
-        "Hành trình bắt đầu. Hoàn cảnh gia đình: " +
-        game.family + ". Tính cách: " + game.temperament + "."
-    );
+/* Xử lý lựa chọn */
+function choose(index){
+  if(!G||G.pending)return;
 
-    showScreen("gameScreen");
+  const s=STORY[G.scene];
+  const c=s.choices[index];
+  if(!c)return;
 
-    $("sceneTitle").textContent = "Một khởi đầu chưa được biết đến";
+  applyEffects(c.effects||{});
 
-    $("sceneText").textContent =
-        "Trước khi nhân vật có thể tự quyết định, cuộc sống được " +
-        "tạo nên từ hoàn cảnh gia đình và những sự kiện ngoài tầm kiểm soát.";
+  if(c.person){
+    const p=G.people[c.person]||(G.people[c.person]={score:0,memory:[]});
+    p.score=clamp(p.score+(c.relation||0)+50)-50;
+    p.memory.push(c.title);
+  }
 
-    $("eventBox").innerHTML =
-        "<p>Gia đình đang chuẩn bị đón một thành viên mới. " +
-        "Những điều kiện ban đầu sẽ ảnh hưởng đến tuổi thơ, " +
-        "nhưng không viết sẵn toàn bộ tương lai.</p>";
+  G.pending={
+    next:c.next,
+    outcome:c.outcome,
+    choice:c.title
+  };
 
-    $("choiceArea").innerHTML = `
-        <div class="choices">
-            <button class="choice" onclick="prenatalChoice('support')">
-                <strong>♡ Có thêm sự nâng đỡ</strong>
-                <small>Người thân cùng chia sẻ trách nhiệm.</small>
-            </button>
+  record("Lựa chọn: "+c.title,c.outcome);
 
-            <button class="choice" onclick="prenatalChoice('change')">
-                <strong>◌ Một thay đổi bất ngờ</strong>
-                <small>Gia đình phải sắp xếp lại kế hoạch.</small>
-            </button>
+  document.getElementById("choiceList").innerHTML="";
+  document.getElementById("choiceHeading").textContent="Hệ quả trước mắt";
+  document.getElementById("choiceCounter").textContent="Đã lựa chọn";
+
+  const box=document.getElementById("resultBox");
+  box.classList.remove("hidden");
+  box.innerHTML=`
+    <strong class="gold">${esc(c.title)}</strong>
+    <p>${esc(c.outcome)}</p>
+    <p class="muted">Lựa chọn đã được ghi lại. Hệ quả có thể tiếp tục xuất hiện trong các tình huống sau.</p>
+  `;
+
+  document.getElementById("continueBtn").classList.remove("hidden");
+  render();
+  saveGame(false);
+}
+
+function continueStory(){
+  if(!G||!G.pending)return;
+
+  const next=G.pending.next;
+  G.pending=null;
+
+  /*
+    Chỉ số tuổi dùng để điều chỉnh giai đoạn hiện tại.
+    Đây là nguyên mẫu, chưa mô phỏng từng ngày trong 80 năm.
+  */
+
+  if(G.age<3)G.age=3;
+  else if(G.age<6)G.age=6;
+  else if(G.age<11)G.age=11;
+  else if(G.age<15)G.age=15;
+  else if(G.age<18)G.age=18;
+  else if(G.age<25)G.age=25;
+  else if(G.age<40)G.age=40;
+  else if(G.age<60)G.age=60;
+  else if(G.age<75)G.age=75;
+  else if(next==="elder"){
+    G.age=79;
+    finishLife();
+    return;
+  }
+
+  G.day+=30;
+  G.stage=currentStage();
+
+  if(next==="elder"&&G.age<60)G.age=60;
+  if(next==="midlife"&&G.age<35)G.age=35;
+  if(next==="career"&&G.age<18)G.age=18;
+  if(next==="futureChoice"&&G.age<15)G.age=15;
+
+  /*
+    Nếu người chơi đã đi qua một cảnh nhiều lần,
+    cảnh tiếp theo vẫn mở ra các lựa chọn mới của cảnh đó.
+    Các ký ức, chỉ số và nhật ký vẫn được giữ lại.
+  */
+
+  showScene(next);
+  saveGame(false);
+}
+
+/* Cập nhật chỉ số */
+function applyEffects(effects){
+  for(const [key,value] of Object.entries(effects)){
+    if(!(key in G.stats))continue;
+    let v=value;
+
+    if(G.difficulty==="easy")v=Math.round(v*0.75);
+    if(G.difficulty==="hard")v=Math.round(v*1.2);
+
+    G.stats[key]=clamp(G.stats[key]+v);
+  }
+}
+
+/* Hoạt động thường ngày */
+function renderDaily(){
+  const el=document.getElementById("dailyActions");
+
+  el.innerHTML=DAILY.map((a,i)=>`
+    <button class="choice" onclick="dailyAction(${i})">
+      <strong>${a.icon} ${esc(a.title)}</strong>
+      <small>${esc(a.desc)}</small>
+    </button>
+  `).join("");
+}
+
+function dailyAction(i){
+  if(!G)return;
+  const a=DAILY[i];
+  applyEffects(a.effects);
+  G.day++;
+  record("Hoạt động thường ngày: "+a.title,a.desc);
+  render();
+  saveGame(false);
+}
+
+/* Nhật ký */
+function record(title,text){
+  if(!G)return;
+  const entry={
+    title,text,day:G.day,age:G.age,
+    stage:currentStage()
+  };
+  G.journal.unshift(entry);
+  if(G.journal.length>500)G.journal.pop();
+}
+
+/* Giao diện trạng thái */
+function render(){
+  if(!G)return;
+
+  document.getElementById("playerName").textContent=G.name;
+  document.getElementById("playerTags").innerHTML=`
+    <span class="tag">${esc(G.gender)}</span>
+    <span class="tag">${esc(G.temperament)}</span>
+    <span class="tag">${esc(familyName())}</span>
+  `;
+
+  document.getElementById("dateLabel").textContent="NGÀY "+G.day;
+  document.getElementById("ageLabel").textContent="Tuổi "+G.age;
+  document.getElementById("stageLabel").textContent=currentStage();
+  document.getElementById("lifeProgress").style.width=Math.min(100,G.age/80*100)+"%";
+
+  const statInfo={
+    energy:["Năng lượng","mint"],
+    mood:["Tâm trạng","pinkbar"],
+    learning:["Kiến thức","bluebar"],
+    skills:["Kỹ năng","goldbar"],
+    relationships:["Bạn bè","mint"],
+    family:["Gia đình","pinkbar"],
+    meaning:["Ý nghĩa","goldbar"],
+    money:["Nguồn lực","bluebar"]
+  };
+
+  document.getElementById("stats").innerHTML=
+    Object.entries(statInfo).map(([key,info])=>`
+      <div class="stat">
+        <div class="stat-top">
+          <span>${info[0]}</span>
+          <strong>${G.stats[key]}</strong>
         </div>
-    `;
-
-    $("activityList").innerHTML =
-        "<p class='muted'>Ở giai đoạn này, nhân vật chưa tự lựa chọn. " +
-        "Hãy tiếp tục để câu chuyện tiến triển.</p>";
-
-    $("activityHint").textContent = "Giai đoạn trước khi sinh";
-    $("nextDayBtn").textContent = "Tiếp tục →";
-
-    render();
-    saveGame(false);
-}
-
-
-/* SỰ KIỆN TRƯỚC KHI SINH */
-
-function prenatalChoice(type) {
-
-    if (!game || game.day !== 0) return;
-
-    if (type === "support") {
-
-        game.stats.family = clamp(game.stats.family + 8);
-
-        log(
-            "Trước khi sinh",
-            "Gia đình nhận được sự hỗ trợ từ người thân."
-        );
-
-        $("eventBox").innerHTML =
-            "<p>Người thân chủ động chia sẻ công việc và động viên gia đình. " +
-            "Không phải mọi khó khăn đều biến mất, nhưng gia đình " +
-            "không phải đối mặt với tất cả một mình.</p>";
-
-    } else {
-
-        game.stats.mood = clamp(game.stats.mood - 3);
-
-        log(
-            "Trước khi sinh",
-            "Một thay đổi bất ngờ khiến gia đình phải sắp xếp lại kế hoạch."
-        );
-
-        $("eventBox").innerHTML =
-            "<p>Một kế hoạch của gia đình thay đổi vào phút cuối. " +
-            "Người lớn phải học cách thích nghi, còn tương lai vẫn chưa thể đoán trước.</p>";
-    }
-
-    render();
-}
-
-
-/* TIẾN TRÌNH THỜI GIAN */
-
-function nextDay() {
-
-    if (!game || !game.alive) return;
-
-    /*
-      Những năm đầu đời được mô phỏng theo từng năm,
-      tránh bắt người chơi bấm hàng nghìn lần trước khi
-      nhân vật đủ lớn để tự đưa ra quyết định.
-    */
-
-    if (game.day === 0) {
-
-        game.day = 1;
-        game.age = 0;
-        game.stage = "Sơ sinh";
-
-        log(
-            "Ngày 1",
-            game.name + " chào đời. Cuộc sống bắt đầu với sự chăm sóc của những người xung quanh."
-        );
-
-        renderBirth();
-        render();
-        saveGame(false);
-
-        return;
-    }
-
-    if (game.age < 3) {
-
-        game.age++;
-        game.day += 365;
-
-        updateStage();
-
-        log(
-            "Tuổi " + game.age,
-            "Một năm nữa trôi qua. Những trải nghiệm đầu đời dần hình thành."
-        );
-
-        renderEarlyYears();
-        render();
-        saveGame(false);
-
-        return;
-    }
-
-    if (game.activityToday === null) {
-
-        $("activityHint").textContent =
-            "Hãy chọn một hoạt động trước khi kết thúc ngày.";
-
-        return;
-    }
-
-    game.day++;
-    game.activityToday = null;
-
-    /*
-      Cứ đủ một năm trong trò chơi, nhân vật sẽ thêm tuổi.
-    */
-
-    if (game.day % 365 === 0) {
-
-        game.age++;
-        updateStage();
-        yearlyEvent();
-    }
-
-    /*
-      Trạng thái có thể ảnh hưởng đến những ngày tiếp theo.
-    */
-
-    if (game.stats.energy < 18) {
-
-        game.stats.mood = clamp(game.stats.mood - 3);
-
-        log(
-            "Một ngày mệt mỏi",
-            "Năng lượng thấp khiến các hoạt động thường ngày trở nên khó khăn."
-        );
-    }
-
-    if (game.age >= 80) {
-
-        endLife();
-        return;
-    }
-
-    render();
-    saveGame(false);
-}
-
-
-/* CHÀO ĐỜI */
-
-function renderBirth() {
-
-    $("dateLabel").textContent = "NGÀY 1 · CHÀO ĐỜI";
-    $("ageLabel").textContent = "Sơ sinh";
-
-    $("sceneTitle").textContent = "Thế giới đầu tiên";
-
-    $("sceneText").textContent =
-        game.name +
-        " chào đời trong một thế giới rộng lớn mà nhân vật chưa thể hiểu.";
-
-    $("eventBox").innerHTML =
-        "<p>Tiếng nói, ánh sáng, những vòng tay và nhịp sống của gia đình " +
-        "dần trở thành phần đầu tiên của câu chuyện. " +
-        "Môi trường sống đang để lại những dấu ấn ban đầu.</p>";
-
-    $("choiceArea").innerHTML =
-        "<span class='pill'>Gia đình: " + escapeHtml(game.family) + "</span>" +
-        "<span class='pill'>Tính cách: " + escapeHtml(game.temperament) + "</span>";
-
-    $("activityList").innerHTML =
-        "<p class='muted'>Trong những năm đầu đời, các sự kiện được kể " +
-        "theo môi trường chăm sóc. Quyền chủ động sẽ tăng dần khi nhân vật lớn lên.</p>";
-
-    $("activityHint").textContent = "Giai đoạn sơ sinh";
-    $("nextDayBtn").textContent = "Tiếp tục lớn lên →";
-}
-
-
-/* TUỔI THƠ */
-
-function renderEarlyYears() {
-
-    const scenes = {
-        1: {
-            title: "Những bước đầu tiên",
-            text: "Nhân vật bắt đầu khám phá thế giới xung quanh."
-        },
-        2: {
-            title: "Tò mò về mọi thứ",
-            text: "Những âm thanh, khuôn mặt và đồ vật quen thuộc dần trở nên có ý nghĩa."
-        },
-        3: {
-            title: "Thế giới mở rộng",
-            text: "Nhân vật bắt đầu thể hiện sở thích, cảm xúc và mong muốn riêng."
-        }
-    };
-
-    const scene = scenes[game.age];
-
-    $("dateLabel").textContent = "NĂM THỨ " + game.age;
-    $("ageLabel").textContent = "Tuổi " + game.age;
-
-    $("sceneTitle").textContent = scene.title;
-    $("sceneText").textContent = scene.text;
-
-    $("eventBox").innerHTML =
-        "<p>Hoàn cảnh gia đình và sự chăm sóc tiếp tục góp phần " +
-        "tạo nên những trải nghiệm đầu đời.</p>";
-
-    $("choiceArea").innerHTML = "";
-
-    $("activityList").innerHTML =
-        "<p class='muted'>Giai đoạn này chủ yếu được kể qua sự phát triển " +
-        "và môi trường sống. Các lựa chọn cá nhân sẽ mở rộng khi nhân vật lớn lên.</p>";
-
-    $("activityHint").textContent = "Giai đoạn đầu đời";
-    $("nextDayBtn").textContent = "Tiếp tục →";
-}
-
-
-/* CÁC GIAI ĐOẠN CUỘC ĐỜI */
-
-function updateStage() {
-
-    const age = game.age;
-
-    if (age < 3) game.stage = "Ấu nhi";
-    else if (age < 6) game.stage = "Mầm non";
-    else if (age < 11) game.stage = "Tiểu học";
-    else if (age < 15) game.stage = "THCS";
-    else if (age < 18) game.stage = "THPT";
-    else if (age < 25) game.stage = "Trưởng thành trẻ";
-    else if (age < 40) game.stage = "Xây dựng cuộc sống";
-    else if (age < 60) game.stage = "Trung niên";
-    else if (age < 75) game.stage = "Tuổi già";
-    else game.stage = "Cuối đời";
-
-    log(
-        "Sinh nhật tuổi " + age,
-        "Nhân vật bước sang tuổi " + age + ". Một giai đoạn mới mở ra."
-    );
-}
-
-
-/* SỰ KIỆN THEO CÁC MỐC TUỔI */
-
-function yearlyEvent() {
-
-    const events = {
-
-        6: [
-            "Ngày đầu đến trường",
-            "Một môi trường mới đem lại bạn bè, quy tắc và những trải nghiệm ngoài gia đình."
-        ],
-
-        11: [
-            "Những thay đổi",
-            "Bạn bè, việc học và mong muốn tự quyết bắt đầu trở nên quan trọng hơn."
-        ],
-
-        15: [
-            "Đứng giữa nhiều lựa chọn",
-            "Kỳ vọng từ bản thân, gia đình và nhà trường đôi khi không hoàn toàn giống nhau."
-        ],
-
-        18: [
-            "Ngưỡng cửa trưởng thành",
-            "Nhân vật bắt đầu suy nghĩ về học tập, nghề nghiệp và sự độc lập."
-        ],
-
-        22: [
-            "Một con đường riêng",
-            "Những lựa chọn bắt đầu để lại dấu ấn rõ hơn trong công việc và đời sống cá nhân."
-        ],
-
-        30: [
-            "Xây dựng điều bền vững",
-            "Công việc, tình cảm, gia đình và sức khỏe có thể đòi hỏi những ưu tiên khác nhau."
-        ],
-
-        45: [
-            "Nhìn lại giữa hành trình",
-            "Nhân vật có thêm trải nghiệm và có thể nhận ra những điều cần thay đổi."
-        ],
-
-        60: [
-            "Một nhịp sống khác",
-            "Thời gian, sức khỏe và các mối quan hệ thân thiết có thể trở thành ưu tiên mới."
-        ],
-
-        75: [
-            "Những điều còn lại",
-            "Nhân vật có dịp nhìn lại những người, nơi chốn và lựa chọn đã làm nên cuộc đời."
-        ]
-    };
-
-    if (events[game.age]) {
-
-        const event = events[game.age];
-
-        $("sceneTitle").textContent = event[0];
-        $("sceneText").textContent = event[1];
-
-        log(event[0], event[1]);
-
-    } else {
-
-        const genericEvents = [
-            "Một cơ hội bất ngờ xuất hiện.",
-            "Một mối quan hệ cần được quan tâm.",
-            "Nhân vật phải điều chỉnh kế hoạch trước một thay đổi.",
-            "Một việc nhỏ đem lại cảm giác tiến bộ."
-        ];
-
-        const message =
-            genericEvents[game.age % genericEvents.length];
-
-        $("sceneTitle").textContent = "Một năm mới";
-        $("sceneText").textContent = message;
-
-        log("Tuổi " + game.age, message);
-    }
-}
-
-
-/* LỰA CHỌN HOẠT ĐỘNG */
-
-function renderActivities() {
-
-    $("activityHint").textContent =
-        "Chọn một hoạt động mỗi ngày";
-
-    $("activityList").innerHTML = activities.map(activity => `
-
-        <button class="activity"
-            onclick="doActivity('${activity.id}')"
-            ${game.activityToday ? "disabled" : ""}>
-
-            <span class="activity-icon">${activity.icon}</span>
-
-            <span class="activity-body">
-                <strong>${activity.title}</strong>
-                <small>${activity.desc}</small>
-            </span>
-
-        </button>
-
+        <div class="bar ${info[1]}"><i style="width:${G.stats[key]}%"></i></div>
+      </div>
     `).join("");
 
-    $("nextDayBtn").textContent = "Kết thúc ngày →";
+  document.getElementById("recentHistory").innerHTML=
+    G.journal.slice(0,5).map(j=>`
+      <div class="history-item">
+        <time>Ngày ${j.day} · Tuổi ${j.age}</time>
+        <strong>${esc(j.title)}</strong><br>
+        ${esc(j.text)}
+      </div>
+    `).join("")||"<p class='muted'>Chưa có sự kiện.</p>";
+
+  document.getElementById("peopleMini").innerHTML=
+    Object.entries(G.people).map(([name,p])=>`
+      <div class="relationship">
+        <strong>${esc(name)}</strong><br>
+        <small>${p.memory.length} ký ức được ghi lại</small>
+      </div>
+    `).join("");
+
+  renderDaily();
+  renderModals();
 }
 
+/* Nội dung modal */
+function renderModals(){
+  if(!G)return;
 
-function doActivity(id) {
+  document.getElementById("journalList").innerHTML=
+    G.journal.map(j=>`
+      <div class="history-item">
+        <time>Ngày ${j.day} · Tuổi ${j.age} · ${esc(j.stage)}</time>
+        <strong>${esc(j.title)}</strong><br>
+        ${esc(j.text)}
+      </div>
+    `).join("")||"<p>Nhật ký đang trống.</p>";
 
-    if (!game || game.activityToday) return;
+  document.getElementById("peopleList").innerHTML=
+    Object.entries(G.people).map(([name,p])=>`
+      <div class="relationship">
+        <h3>${esc(name)}</h3>
+        <p class="muted">Số ký ức đã lưu: ${p.memory.length}</p>
+        <strong>Những điều được ghi nhớ</strong>
+        <ul>${p.memory.map(m=>`<li>${esc(m)}</li>`).join("")||"<li>Chưa có ký ức cụ thể.</li>"}</ul>
+      </div>
+    `).join("");
+}
 
-    const activity = activities.find(item => item.id === id);
+/* Lưu game */
+function saveGame(showAlert){
+  if(!G){
+    if(showAlert)alert("Bạn chưa bắt đầu cuộc đời.");
+    return;
+  }
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify(G));
+    if(showAlert)alert("Đã lưu tiến trình trên trình duyệt.");
+  }catch(e){
+    if(showAlert)alert("Không thể lưu. Hãy thử trình duyệt khác.");
+  }
+}
 
-    if (!activity) return;
-
-    Object.entries(activity.effects).forEach(([key, value]) => {
-
-        game.stats[key] = clamp(game.stats[key] + value);
-
-    });
-
-    game.activityToday = id;
-
-    log(
-        "Lựa chọn: " + activity.title,
-        activity.desc + " Trạng thái nhân vật đã thay đổi."
-    );
-
-    if (
-        id === "friend" &&
-        game.stats.relationships > 25 &&
-        !game.flags.friendMemory
-    ) {
-
-        game.flags.friendMemory = true;
-
-        log(
-            "Một kỷ niệm mới",
-            "Một người bạn nhớ rằng " +
-            game.name + " đã dành thời gian cho họ."
-        );
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw){alert("Chưa có bản lưu.");return;}
+    G=JSON.parse(raw);
+    screen(G.finished?"ending":"game");
+    if(G.finished)renderEnding();
+    else{
+      render();
+      if(G.pending){
+        const s=STORY[G.scene];
+        document.getElementById("choiceList").innerHTML="";
+        document.getElementById("resultBox").classList.remove("hidden");
+        document.getElementById("resultBox").textContent=G.pending.outcome;
+        document.getElementById("continueBtn").classList.remove("hidden");
+      }else{
+        showScene(G.scene);
+      }
     }
-
-    if (id === "study" && game.stats.energy < 25) {
-
-        log(
-            "Cái giá của cố gắng",
-            "Cố gắng khi quá mệt có thể làm việc học kém hiệu quả."
-        );
-    }
-
-    render();
-
-    $("activityHint").textContent =
-        "Đã chọn: " + activity.title;
-
-    $("activityList").innerHTML = `
-        <div class="event">
-            <strong>${activity.title}</strong>
-            <p>${activity.desc}</p>
-            <p class="muted">
-                Bạn có thể kết thúc ngày để tiếp tục câu chuyện.
-            </p>
-        </div>
-    `;
-
-    saveGame(false);
+  }catch(e){
+    alert("Không đọc được bản lưu.");
+  }
 }
 
-
-/* NHẬT KÝ */
-
-function log(when, text) {
-
-    if (!game) return;
-
-    const item = {
-        when: when,
-        text: text,
-        day: game.day,
-        age: game.age
-    };
-
-    game.history.push(item);
-    game.journal.push(item);
-
-    if (game.history.length > 500) {
-        game.history.shift();
-    }
-
-    if (game.journal.length > 500) {
-        game.journal.shift();
-    }
+/* Kết thúc hành trình */
+function finishLife(){
+  G.finished=true;
+  record("Cuối hành trình","Cuộc đời của "+G.name+" khép lại.");
+  saveGame(false);
+  screen("ending");
+  renderEnding();
 }
 
+function renderEnding(){
+  document.getElementById("endingName").textContent=G.name;
 
-function renderJournal() {
+  const milestones=G.journal.slice(-12).reverse().map(j=>
+    "• Tuổi "+j.age+" — "+j.title+": "+j.text
+  ).join("\n\n");
 
-    $("journalContent").innerHTML =
-        (game?.journal || [])
-        .slice()
-        .reverse()
-        .map(item => `
-
-            <div class="feed-item">
-                <time>
-                    ${escapeHtml(item.when)}
-                    · Ngày ${item.day}
-                    · Tuổi ${item.age}
-                </time>
-
-                ${escapeHtml(item.text)}
-            </div>
-
-        `)
-        .join("") || "<p>Nhật ký đang trống.</p>";
+  document.getElementById("memoir").textContent=
+    G.name+" đã đi qua một hành trình với nhiều lựa chọn.\n\n"+
+    "Điểm xuất phát: "+familyName()+".\n"+
+    "Khuynh hướng tính cách: "+G.temperament+".\n\n"+
+    "NHỮNG DẤU MỐC ĐƯỢC GHI LẠI\n\n"+
+    milestones+"\n\n"+
+    "Không có một con số nào kể hết được cuộc đời này. "+
+    "Những điều nhân vật đã lựa chọn, những người từng gặp và "+
+    "những gì đã thay đổi cùng thời gian tạo nên câu chuyện riêng.";
 }
 
-
-/* HỒ SƠ NHÂN VẬT */
-
-function renderProfile() {
-
-    if (!game) return;
-
-    $("profileContent").innerHTML = `
-
-        <p><strong>${escapeHtml(game.name)}</strong></p>
-
-        <p>
-            <span class="pill">${escapeHtml(game.gender)}</span>
-            <span class="pill">${escapeHtml(game.family)}</span>
-            <span class="pill">${escapeHtml(game.temperament)}</span>
-        </p>
-
-        <p>Tuổi: ${game.age}</p>
-        <p>Ngày: ${game.day}</p>
-        <p>Giai đoạn: ${escapeHtml(game.stage)}</p>
-
-        <p class="muted">
-            Các chỉ số phản ánh trạng thái trong trò chơi,
-            không phải thước đo giá trị của một con người.
-        </p>
-
-    `;
+function newLife(){
+  if(!confirm("Bắt đầu một cuộc đời mới?"))return;
+  G=null;
+  screen("setup");
 }
-
-
-/* HIỂN THỊ CHỈ SỐ */
-
-function render() {
-
-    if (!game) return;
-
-    $("profileName").textContent = game.name;
-
-    $("profileTags").innerHTML = `
-        <span class="pill">${escapeHtml(game.gender)}</span>
-        <span class="pill">${escapeHtml(game.family)}</span>
-        <span class="pill">${escapeHtml(game.temperament)}</span>
-    `;
-
-    const stats = {
-        energy: ["Năng lượng", game.stats.energy, "mint"],
-        mood: ["Tâm trạng", game.stats.mood, "pink"],
-        learning: ["Học tập", game.stats.learning, "blue"],
-        skills: ["Kỹ năng", game.stats.skills, "gold"],
-        relationships: ["Bạn bè / quan hệ", game.stats.relationships, "mint"],
-        family: ["Gắn kết gia đình", game.stats.family, "pink"],
-        meaning: ["Ý nghĩa cá nhân", game.stats.meaning, "gold"]
-    };
-
-    $("statsPanel").innerHTML =
-        Object.values(stats).map(stat => `
-
-            <div class="stat">
-
-                <div class="stat-head">
-                    <span>${stat[0]}</span>
-                    <strong>${stat[1]}/100</strong>
-                </div>
-
-                <div class="bar ${stat[2]}">
-                    <i style="width:${stat[1]}%"></i>
-                </div>
-
-            </div>
-
-        `).join("");
-
-    $("dateLabel").textContent =
-        "NGÀY " + game.day + " · " + game.stage.toUpperCase();
-
-    $("ageLabel").textContent = "Tuổi " + game.age;
-
-    $("lifeStage").textContent = game.stage;
-
-    $("lifeProgress").style.width =
-        Math.min(100, game.age / 80 * 100) + "%";
-
-    if (game.age >= 3) {
-        renderActivities();
-    }
-
-    $("miniHistory").innerHTML =
-        game.history.slice(-5).reverse().map(item => `
-
-            <div class="feed-item">
-                <time>${escapeHtml(item.when)}</time>
-                ${escapeHtml(item.text)}
-            </div>
-
-        `).join("") || "<p class='muted'>Chưa có sự kiện nào.</p>";
-
-    renderJournal();
-    renderProfile();
-}
-
-
-/* GIAO DIỆN */
-
-function showScreen(id) {
-
-    document.querySelectorAll(".screen")
-        .forEach(screen => screen.classList.remove("active"));
-
-    $(id).classList.add("active");
-}
-
-
-function openModal(id) {
-
-    if (id === "journalModal") {
-        renderJournal();
-    }
-
-    if (id === "profileModal") {
-        renderProfile();
-    }
-
-    if (id === "historyModal") {
-
-        $("historyContent").innerHTML =
-            (game?.history || [])
-            .slice()
-            .reverse()
-            .map(item => `
-
-                <div class="feed-item">
-                    <time>
-                        ${escapeHtml(item.when)}
-                        · Ngày ${item.day}
-                        · Tuổi ${item.age}
-                    </time>
-
-                    ${escapeHtml(item.text)}
-                </div>
-
-            `)
-            .join("");
-    }
-
-    $(id).classList.add("show");
-}
-
-
-function closeModal(id) {
-    $(id).classList.remove("show");
-}
-
-
-/* TIỆN ÍCH */
-
-function clamp(value) {
-    return Math.max(0, Math.min(100, value));
-}
-
-
-function escapeHtml(value) {
-
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-
-    })[char]);
-}
-
-
-/* LƯU TIẾN TRÌNH */
-
-function saveGame(showMessage) {
-
-    if (!game) {
-
-        if (showMessage) {
-            alert("Chưa có cuộc đời để lưu.");
-        }
-
-        return;
-    }
-
-    try {
-
-        localStorage.setItem(
-            SAVE_KEY,
-            JSON.stringify(game)
-        );
-
-        if (showMessage) {
-            alert("Đã lưu tiến trình trên trình duyệt này.");
-        }
-
-    } catch (error) {
-
-        if (showMessage) {
-            alert("Không thể lưu. Hãy xuất bản lưu JSON.");
-        }
-    }
-
-    updateContinueButton();
-}
-
-
-function continueSaved() {
-
-    try {
-
-        const raw = localStorage.getItem(SAVE_KEY);
-
-        if (!raw) return;
-
-        game = JSON.parse(raw);
-
-        showScreen(game.alive ? "gameScreen" : "endingScreen");
-
-        if (game.alive) {
-            render();
-        } else {
-            renderEnding();
-        }
-
-    } catch (error) {
-
-        alert("Không thể đọc bản lưu.");
-    }
-}
-
-
-function updateContinueButton() {
-
-    try {
-
-        $("continueBtn").style.display =
-            localStorage.getItem(SAVE_KEY)
-                ? "inline-block"
-                : "none";
-
-    } catch (error) {}
-}
-
-
-function exportSave() {
-
-    if (!game) return;
-
-    const blob = new Blob(
-        [JSON.stringify(game, null, 2)],
-        { type: "application/json" }
-    );
-
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "decision-simulator-save.json";
-
-    link.click();
-
-    URL.revokeObjectURL(url);
-}
-
-
-function resetGame() {
-
-    if (!confirm("Xóa cuộc đời đang lưu trên trình duyệt?")) {
-        return;
-    }
-
-    localStorage.removeItem(SAVE_KEY);
-
-    game = null;
-
-    closeModal("profileModal");
-    showScreen("setupScreen");
-
-    updateContinueButton();
-}
-
-
-function newLife() {
-
-    if (!confirm("Bắt đầu cuộc đời mới?")) {
-        return;
-    }
-
-    game = null;
-
-    showScreen("setupScreen");
-
-    $("charName").value = "";
-
-    updateContinueButton();
-}
-
-
-/* KẾT THÚC CUỘC ĐỜI */
-
-function endLife() {
-
-    game.alive = false;
-
-    log(
-        "Cuối đời",
-        "Hành trình của " + game.name + " khép lại."
-    );
-
-    saveGame(false);
-
-    showScreen("endingScreen");
-
-    renderEnding();
-}
-
-
-function renderEnding() {
-
-    $("endingName").textContent = game.name;
-
-    const highlights = game.history
-        .filter(item =>
-            /Lựa chọn:|Sinh nhật|kỷ niệm|cơ hội|Chào đời|Ngày đầu/.test(item.text)
-        )
-        .slice(0, 15)
-        .map(item => "- " + item.when + ": " + item.text)
-        .join("\n");
-
-    $("memoir").textContent =
-
-        game.name + " đã đi qua " + game.age + " năm cuộc đời.\n\n" +
-
-        "Điểm xuất phát: " + game.family + ".\n" +
-
-        "Khuynh hướng ban đầu: " + game.temperament + ".\n\n" +
-
-        "NHỮNG DẤU MỐC ĐƯỢC GHI LẠI:\n" +
-
-        (highlights || "- Một hành trình đã được bắt đầu.") +
-
-        "\n\nỞ cuối hành trình, những con số không thể nói thay tất cả. " +
-        "Điều còn lại là cách nhân vật đã sống, những người từng gặp " +
-        "và những điều đã chọn — cũng như những điều đã không chọn.";
-}
-
-
-updateContinueButton();
-
 </script>
-
 </body>
 </html>
+```
