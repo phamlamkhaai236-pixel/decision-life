@@ -1,0 +1,3998 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5dfb3">
+<title>Decision Simulator — Pixel Life</title>
+
+<style>
+:root {
+  --ink: #393044;
+  --ink-soft: #68596c;
+  --paper: #fff8e9;
+  --paper-dark: #f0dfc4;
+  --cream: #f9edcf;
+  --pink: #e8b4b0;
+  --green: #c6d8a5;
+  --blue: #b7d4df;
+  --yellow: #f3d27e;
+  --brown: #8c6955;
+  --border: 3px solid var(--ink);
+  --shadow: 5px 5px 0 rgba(57,48,68,.9);
+  --pixel: "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #e7d9bc;
+  font-family: var(--pixel);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: var(--ink);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px dashed #7c8f65;
+  outline-offset: 4px;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.pixel-button {
+  border: var(--border);
+  border-radius: 3px;
+  background: var(--paper);
+  padding: 10px 13px;
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform .12s, box-shadow .12s;
+}
+
+.pixel-button:hover:not(:disabled) {
+  transform: translate(-2px,-2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.pixel-button:active:not(:disabled) {
+  transform: translate(2px,2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.pixel-button.primary {
+  background: var(--green);
+}
+
+.pixel-button.pink {
+  background: var(--pink);
+}
+
+.pixel-button.blue {
+  background: var(--blue);
+}
+
+.pixel-button.small {
+  padding: 7px 9px;
+  font-size: 11px;
+}
+
+/* =========================
+   TOP BAR
+========================= */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 18px;
+  background: var(--paper);
+  border-bottom: 3px solid var(--ink);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  font-size: 19px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .5px;
+}
+
+.brand-subtitle {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-button {
+  position: fixed;
+  top: 83px;
+  right: 18px;
+  z-index: 500;
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--ink);
+  border-radius: 4px;
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-size: 24px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.help-button:hover {
+  background: #ffe7a3;
+  transform: translate(-1px,-1px);
+}
+
+/* =========================
+   MAIN LAYOUT
+========================= */
+
+.app {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 18px;
+  align-items: start;
+}
+
+.main-column,
+.side-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel {
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 15px;
+  background: var(--paper-dark);
+  border-bottom: 3px solid var(--ink);
+}
+
+.panel-header h2,
+.panel-header h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.panel-body {
+  padding: 16px;
+}
+
+.eyebrow {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.small-text {
+  font-size: 11px;
+}
+
+/* =========================
+   PIXEL SCENE
+========================= */
+
+.scene-frame {
+  border: 4px solid var(--ink);
+  background: #b9dbe6;
+  overflow: hidden;
+}
+
+.scene-world {
+  position: relative;
+  height: 280px;
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    #a8d5e5 0%,
+    #d6e9dc 64%,
+    #9cbd8a 64%,
+    #799e72 100%
+  );
+  image-rendering: pixelated;
+}
+
+.scene-world.night {
+  background: linear-gradient(
+    to bottom,
+    #414d76 0%,
+    #858eb0 64%,
+    #657d69 64%,
+    #49684e 100%
+  );
+}
+
+.scene-world.city {
+  background: linear-gradient(
+    to bottom,
+    #b6d8e3 0%,
+    #e8dfc1 62%,
+    #9da58a 62%,
+    #818b72 100%
+  );
+}
+
+.scene-world.interior {
+  background: linear-gradient(
+    to bottom,
+    #ead3a9 0%,
+    #ead3a9 76%,
+    #bd9872 76%,
+    #bd9872 100%
+  );
+}
+
+.sun {
+  position: absolute;
+  top: 27px;
+  right: 14%;
+  width: 42px;
+  height: 42px;
+  background: #ffe5a0;
+  box-shadow: 0 0 0 5px rgba(255,229,160,.2);
+}
+
+.cloud {
+  position: absolute;
+  width: 65px;
+  height: 15px;
+  background: rgba(255,255,255,.8);
+  box-shadow:
+    12px -12px 0 rgba(255,255,255,.8),
+    30px -7px 0 rgba(255,255,255,.8),
+    40px 0 0 rgba(255,255,255,.8);
+}
+
+.cloud.one {
+  top: 55px;
+  left: 12%;
+}
+
+.cloud.two {
+  top: 93px;
+  right: 25%;
+  transform: scale(.65);
+}
+
+.scene-object {
+  position: absolute;
+  bottom: 36%;
+  left: 12%;
+  width: 90px;
+  height: 100px;
+}
+
+.scene-object.house {
+  width: 100px;
+  height: 80px;
+  bottom: 36%;
+  background: #e8c49b;
+  border: 4px solid #58434b;
+  box-shadow: inset 0 -12px #d6a87f;
+}
+
+.scene-object.house::before {
+  content: "";
+  position: absolute;
+  top: -35px;
+  left: -10px;
+  width: 108px;
+  height: 38px;
+  background: #bc8175;
+  border: 4px solid #58434b;
+  clip-path: polygon(50% 0,100% 100%,0 100%);
+}
+
+.scene-object.house::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 36px;
+  width: 24px;
+  height: 38px;
+  background: #8c6955;
+  border: 3px solid #58434b;
+}
+
+.scene-object.tree {
+  left: auto;
+  right: 15%;
+  width: 22px;
+  height: 65px;
+  background: #8a6047;
+  border: 3px solid #58434b;
+}
+
+.scene-object.tree::before {
+  content: "";
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  top: -42px;
+  left: -21px;
+  background: #72996d;
+  border: 4px solid #58434b;
+  box-shadow:
+    -12px 12px 0 -2px #72996d,
+    12px 12px 0 -2px #72996d;
+}
+
+.scene-object.school {
+  width: 150px;
+  height: 83px;
+  left: 8%;
+  background: #e5c99b;
+  border: 4px solid #58434b;
+}
+
+.scene-object.school::before {
+  content: "";
+  position: absolute;
+  top: -27px;
+  left: -6px;
+  width: 154px;
+  height: 30px;
+  background: #b77e75;
+  border: 4px solid #58434b;
+}
+
+.scene-object.school::after {
+  content: "SCHOOL";
+  position: absolute;
+  top: 12px;
+  left: 23px;
+  padding: 3px;
+  background: #fff2d6;
+  border: 2px solid #58434b;
+  font-size: 9px;
+}
+
+.scene-object.city-building {
+  left: 8%;
+  width: 62px;
+  height: 140px;
+  background: #c4b1bf;
+  border: 4px solid #58434b;
+  box-shadow:
+    76px 30px 0 -4px #d9c39b,
+    76px 30px 0 0 #58434b,
+    150px 2px 0 -4px #a6c5c2,
+    150px 2px 0 0 #58434b;
+}
+
+.scene-object.city-building::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 12px;
+  height: 15px;
+  background: #f8e7b4;
+  box-shadow:
+    22px 0 #f8e7b4,
+    0 27px #f8e7b4,
+    22px 27px #f8e7b4,
+    0 54px #f8e7b4,
+    22px 54px #f8e7b4;
+}
+
+.scene-object.window {
+  left: 15%;
+  bottom: 39%;
+  width: 70px;
+  height: 75px;
+  background: #8bbbc8;
+  border: 5px solid #725348;
+  box-shadow: inset 0 0 0 4px #d5e5d8;
+}
+
+.scene-object.window::before {
+  content: "";
+  position: absolute;
+  top: 32px;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: #725348;
+}
+
+.scene-object.window::after {
+  content: "";
+  position: absolute;
+  left: 29px;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  background: #725348;
+}
+
+.pixel-person {
+  position: absolute;
+  z-index: 5;
+  bottom: 22%;
+  left: 49%;
+  width: 38px;
+  height: 72px;
+  image-rendering: pixelated;
+  transition: left .3s;
+}
+
+.person-head {
+  position: absolute;
+  top: 0;
+  left: 7px;
+  width: 25px;
+  height: 25px;
+  background: #efc49f;
+  border: 3px solid #463644;
+}
+
+.person-hair {
+  position: absolute;
+  top: -5px;
+  left: 5px;
+  width: 29px;
+  height: 12px;
+  background: #604638;
+  border: 3px solid #463644;
+  z-index: 2;
+}
+
+.person-body {
+  position: absolute;
+  top: 25px;
+  left: 3px;
+  width: 33px;
+  height: 27px;
+  background: #d58f94;
+  border: 3px solid #463644;
+}
+
+.person-legs {
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  width: 10px;
+  height: 22px;
+  background: #6b617e;
+  border: 2px solid #463644;
+  box-shadow: 14px 0 #6b617e, 14px 0 0 2px #463644;
+}
+
+.scene-caption {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  padding: 7px 10px;
+  max-width: 80%;
+  background: rgba(255,248,233,.93);
+  border: 2px solid var(--ink);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* =========================
+   STORY
+========================= */
+
+.story-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 2px solid var(--ink);
+  background: var(--blue);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.tag.green {
+  background: var(--green);
+}
+
+.tag.pink {
+  background: var(--pink);
+}
+
+.story-title {
+  margin: 0 0 12px;
+  font-size: clamp(19px,3vw,26px);
+  line-height: 1.35;
+}
+
+.story-text {
+  white-space: pre-line;
+  line-height: 1.9;
+  color: #5b4c5f;
+}
+
+.event-box {
+  margin-top: 15px;
+  padding: 12px;
+  border: 2px dashed #b49b78;
+  background: #f9efd9;
+  line-height: 1.8;
+}
+
+.event-box strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.choice-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.choice-card {
+  min-width: 0;
+  padding: 13px;
+  text-align: left;
+  border: 3px solid var(--ink);
+  background: #fffdf5;
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+  transition: transform .12s, background .12s;
+}
+
+.choice-card:hover:not(:disabled) {
+  transform: translate(-2px,-2px);
+  background: #f5e9c9;
+}
+
+.choice-card .choice-number {
+  display: inline-grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  margin-right: 5px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  font-weight: bold;
+}
+
+.choice-card strong {
+  font-size: 12px;
+}
+
+.choice-card p {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.choice-card.selected {
+  background: var(--green);
+}
+
+.continue-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* =========================
+   DAILY ACTIONS
+========================= */
+
+.daily-intro {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.daily-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 9px;
+}
+
+.daily-card {
+  padding: 11px;
+  text-align: left;
+  border: 2px solid #9d8a76;
+  background: #fffdf5;
+  cursor: pointer;
+}
+
+.daily-card:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: #f3e8cd;
+}
+
+.daily-card strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.daily-card p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.daily-count {
+  display: inline-block;
+  margin-top: 7px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* =========================
+   STATUS SIDEBAR
+========================= */
+
+.player-card {
+  padding: 15px;
+  text-align: center;
+}
+
+.avatar-box {
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 10px;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--ink);
+  background: #e9d2aa;
+  font-size: 39px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.player-name {
+  font-size: 16px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.player-stage {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.stat-row {
+  margin: 13px 0;
+}
+
+.stat-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 11px;
+}
+
+.stat-track {
+  height: 11px;
+  border: 2px solid var(--ink);
+  background: #e6d7c3;
+}
+
+.stat-fill {
+  height: 100%;
+  width: 50%;
+  background: var(--green);
+  transition: width .3s;
+}
+
+.stat-fill.energy { background: #f1d17b; }
+.stat-fill.mind { background: #d7b6d9; }
+.stat-fill.skill { background: #a9cbdc; }
+.stat-fill.money { background: #b6d39b; }
+.stat-fill.relation { background: #e9b0ae; }
+.stat-fill.health { background: #a9cba6; }
+
+.progress-track {
+  height: 12px;
+  margin: 10px 0;
+  border: 2px solid var(--ink);
+  background: #e8dac5;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: #c4d7a5;
+  transition: width .3s;
+}
+
+.people-list,
+.journal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  background: #fffdf6;
+  border: 1px solid #d7c6ac;
+}
+
+.person-avatar {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: #ead4b0;
+  border: 2px solid var(--ink);
+}
+
+.person-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.person-info strong {
+  display: block;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.person-info small {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.journal-entry {
+  padding: 10px;
+  border-left: 4px solid #d8b66f;
+  background: #fffdf6;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.journal-entry strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sidebar-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* =========================
+   START SCREEN
+========================= */
+
+.start-screen {
+  max-width: 620px;
+  margin: 35px auto;
+  padding: 26px;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.start-logo {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border: 4px solid var(--ink);
+  background: var(--yellow);
+  font-size: 39px;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.start-screen h1 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(23px,4vw,35px);
+  line-height: 1.3;
+}
+
+.start-description {
+  max-width: 450px;
+  margin: 13px auto 22px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.form-field {
+  margin: 14px 0;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 43px;
+  padding: 10px;
+  color: var(--ink);
+  background: #fffdf5;
+  border: 2px solid #9c8978;
+  border-radius: 2px;
+}
+
+.start-submit {
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px;
+  border: 3px solid var(--ink);
+  background: var(--green);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.start-submit:hover {
+  background: #d9e9bb;
+}
+
+.start-help {
+  display: block;
+  margin: 15px auto 0;
+  padding: 7px;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* =========================
+   ENDING
+========================= */
+
+.ending-screen {
+  padding: 23px;
+}
+
+.ending-screen h2 {
+  font-size: 24px;
+  line-height: 1.4;
+}
+
+.ending-story {
+  white-space: pre-line;
+  line-height: 2;
+  color: #5c4c5d;
+}
+
+.ending-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.ending-stat {
+  padding: 12px;
+  background: #f5e9cf;
+  border: 2px solid #b5a083;
+}
+
+.ending-stat strong {
+  display: block;
+  font-size: 18px;
+}
+
+/* =========================
+   HELP MODAL
+========================= */
+
+.help-overlay,
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  background: rgba(32,25,40,.78);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .2s, visibility .2s;
+}
+
+.help-overlay.open,
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.help-window,
+.modal-window {
+  width: min(740px,100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  box-shadow: 8px 8px 0 rgba(0,0,0,.3);
+  transform: translateY(12px);
+  transition: transform .2s;
+}
+
+.help-overlay.open .help-window,
+.modal-overlay.open .modal-window {
+  transform: translateY(0);
+}
+
+.help-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 20px;
+  background: #f2d7a0;
+  border-bottom: 3px solid var(--ink);
+}
+
+.help-label {
+  color: #79614d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.help-header h2 {
+  margin: 5px 0;
+  font-size: clamp(22px,4vw,30px);
+  line-height: 1.3;
+}
+
+.help-header p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.help-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.help-content,
+.modal-content {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 22px 22px;
+}
+
+.help-section {
+  display: grid;
+  grid-template-columns: 37px minmax(0,1fr);
+  gap: 13px;
+  padding: 16px 0;
+  border-bottom: 2px dashed #e2d3bc;
+}
+
+.help-section:last-child {
+  border-bottom: 0;
+}
+
+.help-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink);
+  background: var(--green);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.help-section h3 {
+  margin: 0 0 7px;
+  font-size: 13px;
+}
+
+.help-section p {
+  margin: 0 0 7px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+.help-highlight {
+  margin-top: 12px;
+  padding: 13px;
+  border: 2px solid #dfc58d;
+  background: #f6e8c9;
+}
+
+.help-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--paper-dark);
+  border-top: 3px solid var(--ink);
+}
+
+.help-footer span {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.help-footer button {
+  padding: 10px 12px;
+  border: 3px solid var(--ink);
+  background: var(--green);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-weight: bold;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* =========================
+   TOAST & FOOTER
+========================= */
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  z-index: 2000;
+  max-width: calc(100% - 30px);
+  padding: 12px 16px;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%,12px);
+  transition: .2s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%,0);
+}
+
+.game-footer {
+  margin-top: 25px;
+  padding: 16px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side-column {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    align-items: start;
+  }
+
+  .player-panel {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 560px) {
+  body {
+    font-size: 12px;
+  }
+
+  .topbar {
+    padding: 9px 10px;
+  }
+
+  .brand-name {
+    font-size: 11px;
+  }
+
+  .brand-subtitle {
+    font-size: 8px;
+  }
+
+  .top-actions .pixel-button {
+    padding: 7px;
+    font-size: 10px;
+  }
+
+  .app {
+    padding: 12px;
+  }
+
+  .side-column {
+    display: flex;
+  }
+
+  .scene-world {
+    height: 225px;
+  }
+
+  .choice-list,
+  .daily-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-body {
+    padding: 12px;
+  }
+
+  .help-button {
+    top: auto;
+    right: 13px;
+    bottom: 17px;
+    width: 43px;
+    height: 43px;
+  }
+
+  .help-overlay {
+    padding: 8px;
+  }
+
+  .help-window {
+    max-height: 92vh;
+  }
+
+  .help-header {
+    padding: 15px;
+  }
+
+  .help-content {
+    padding: 8px 15px 16px;
+  }
+
+  .help-footer {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 12px 15px;
+  }
+
+  .help-footer button {
+    width: 100%;
+  }
+
+  .start-screen {
+    margin: 15px auto;
+    padding: 18px;
+  }
+
+  .ending-stat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">✦</div>
+    <div>
+      <div class="brand-name">DECISION SIMULATOR</div>
+      <div class="brand-subtitle">PIXEL LIFE · EVERY CHOICE TELLS A STORY</div>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <button class="pixel-button small" id="saveButton" type="button">
+      Lưu
+    </button>
+    <button class="pixel-button small" id="loadButton" type="button">
+      Tải
+    </button>
+  </div>
+</header>
+
+<button
+  id="helpButton"
+  class="help-button"
+  type="button"
+  aria-label="Mở hướng dẫn chơi"
+  title="Hướng dẫn chơi"
+>?</button>
+
+<main class="app">
+
+  <!-- MÀN HÌNH TẠO NHÂN VẬT -->
+  <section id="startScreen" class="start-screen">
+    <div class="start-logo">✦</div>
+
+    <div class="eyebrow" style="text-align:center">
+      YOUR LIFE · YOUR STORY
+    </div>
+
+    <h1>Pixel Life</h1>
+
+    <p class="start-description">
+      Một cuộc đời đang chờ bạn viết tiếp.
+      Từ những ngày đầu tiên, tình bạn, trường học, công việc
+      đến tuổi già — mỗi lựa chọn đều để lại dấu vết.
+    </p>
+
+    <form id="characterForm">
+      <div class="form-field">
+        <label for="playerName">Tên nhân vật</label>
+        <input
+          id="playerName"
+          maxlength="24"
+          placeholder="Tên mà bạn muốn..."
+          value="An"
+          required
+        >
+      </div>
+
+      <div class="form-field">
+        <label for="playerGender">Nhân vật</label>
+        <select id="playerGender">
+          <option value="female">Nữ</option>
+          <option value="male">Nam</option>
+          <option value="other">Tùy chọn khác</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="playerTemperament">Tính cách ban đầu</label>
+        <select id="playerTemperament">
+          <option value="thoughtful">Sâu sắc, hay suy nghĩ</option>
+          <option value="brave">Can đảm, thích thử thách</option>
+          <option value="gentle">Dịu dàng, quan tâm người khác</option>
+          <option value="curious">Tò mò, thích khám phá</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="familyBackground">Hoàn cảnh gia đình</label>
+        <select id="familyBackground">
+          <option value="stable">Ổn định, có sự hỗ trợ</option>
+          <option value="modest">Kinh tế vừa phải, cần nỗ lực</option>
+          <option value="difficult">Nhiều khó khăn, sớm tự lập</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="difficulty">Độ khó cuộc sống</label>
+        <select id="difficulty">
+          <option value="story">Chế độ câu chuyện — cân bằng</option>
+          <option value="normal">Chế độ thường — nhiều đánh đổi</option>
+          <option value="hard">Chế độ thử thách — nguồn lực hạn chế</option>
+        </select>
+      </div>
+
+      <button class="start-submit" type="submit">
+        BẮT ĐẦU CUỘC ĐỜI →
+      </button>
+    </form>
+
+    <button class="start-help" id="startHelp" type="button">
+      Chưa biết cách chơi? Xem hướng dẫn
+    </button>
+
+    <p class="muted small-text" style="text-align:center;margin-top:12px">
+      Tiến trình được lưu trên trình duyệt của thiết bị này.
+    </p>
+  </section>
+
+  <!-- MÀN HÌNH CHÍNH -->
+  <section id="gameScreen" hidden>
+    <div class="game-layout">
+
+      <div class="main-column">
+
+        <!-- THẾ GIỚI PIXEL -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>THẾ GIỚI CỦA BẠN</h2>
+            <span class="tag green" id="weatherLabel">Một ngày mới</span>
+          </div>
+
+          <div class="scene-frame">
+            <div id="sceneWorld" class="scene-world">
+              <div class="sun"></div>
+              <div class="cloud one"></div>
+              <div class="cloud two"></div>
+              <div id="sceneObject" class="scene-object house"></div>
+
+              <div class="pixel-person" id="pixelPerson">
+                <div class="person-hair"></div>
+                <div class="person-head"></div>
+                <div class="person-body"></div>
+                <div class="person-legs"></div>
+              </div>
+
+              <div class="scene-caption" id="sceneCaption">
+                Một khởi đầu nhỏ bé
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CÂU CHUYỆN -->
+        <section class="panel" id="storyPanel">
+          <div class="panel-header">
+            <h2>CHƯƠNG CUỘC ĐỜI</h2>
+            <span id="chapterCounter" class="tag">Chương 1</span>
+          </div>
+
+          <div class="panel-body">
+            <div class="story-meta">
+              <span class="tag green" id="stageTag">Tuổi thơ</span>
+              <span class="tag pink" id="ageTag">0 tuổi</span>
+            </div>
+
+            <h2 class="story-title" id="sceneTitle">
+              Một cuộc đời bắt đầu
+            </h2>
+
+            <div class="story-text" id="sceneText"></div>
+
+            <div class="event-box" id="eventBox" hidden>
+              <strong id="eventHeading">Kết quả lựa chọn</strong>
+              <div id="eventText"></div>
+              <div class="continue-row">
+                <button class="pixel-button primary" id="continueButton" type="button">
+                  Tiếp tục →
+                </button>
+              </div>
+            </div>
+
+            <div id="choiceList" class="choice-list"></div>
+          </div>
+        </section>
+
+        <!-- HÀNH ĐỘNG HẰNG NGÀY -->
+        <section class="panel" id="dailyPanel">
+          <div class="panel-header">
+            <h2>MỘT NGÀY CỦA BẠN</h2>
+            <span class="tag" id="dailyCounter">0/2 hành động</span>
+          </div>
+
+          <div class="panel-body">
+            <p class="daily-intro">
+              Không phải lúc nào bạn cũng cần đưa ra quyết định lớn.
+              Những việc nhỏ mỗi ngày cũng góp phần định hình cuộc sống.
+            </p>
+
+            <div id="dailyList" class="daily-grid"></div>
+          </div>
+        </section>
+
+        <!-- NHẬT KÝ -->
+        <section class="panel">
+          <div class="panel-header">
+            <h2>NHẬT KÝ CUỘC ĐỜI</h2>
+            <button class="pixel-button small" id="openJournal" type="button">
+              Xem tất cả
+            </button>
+          </div>
+
+          <div class="panel-body">
+            <div id="journalPreview" class="journal-list">
+              <p class="muted small-text">
+                Những kỷ niệm sẽ xuất hiện sau khi hành trình bắt đầu.
+              </p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- CỘT THÔNG TIN -->
+      <aside class="side-column">
+
+        <section class="panel player-panel">
+          <div class="panel-header">
+            <h3>NHÂN VẬT</h3>
+            <span class="tag green">PLAYER</span>
+          </div>
+
+          <div class="panel-body player-card">
+            <div class="avatar-box" id="playerAvatar">♟</div>
+            <div class="player-name" id="displayPlayerName">An</div>
+            <div class="player-stage" id="playerStage">
+              Đang bắt đầu hành trình
+            </div>
+
+            <div style="margin-top:20px;text-align:left">
+              <div class="stat-row">
+                <div class="stat-label">
+                  <span>♥ Sức khỏe</span>
+                  <strong id="healthValue">70</strong>
+                </div>
+                <div class="stat-track">
+                  <div class="stat-fill health" id="healthBar"></div>
+                </div>
+              </div>
+
+              <div class="stat-row">
+                <div class="stat-label">
+                  <span>☼ Năng lượng</span>
+                  <strong id="energyValue">70</strong>
+                </div>
+                <div class="stat-track">
+                  <div class="stat-fill energy" id="energyBar"></div>
+                </div>
+              </div>
+
+              <div class="stat-row">
+                <div class="stat-label">
+                  <span>☁ Tinh thần</span>
+                  <strong id="mindValue">70</strong>
+                </div>
+                <div class="stat-track">
+                  <div class="stat-fill mind" id="mindBar"></div>
+                </div>
+              </div>
+
+              <div class="stat-row">
+                <div class="stat-label">
+                  <span>✎ Kỹ năng</span>
+                  <strong id="skillValue">10</strong>
+                </div>
+                <div class="stat-track">
+                  <div class="stat-fill skill" id="skillBar"></div>
+                </div>
+              </div>
+
+              <div class="stat-row">
+                <div class="stat-label">
+                  <span>◇ Tài chính</span>
+                  <strong id="moneyValue">20</strong>
+                </div>
+                <div class="stat-track">
+                  <div class="stat-fill money" id="moneyBar"></div>
+                </div>
+              </div>
+
+              <div class="stat-row">
+                <div class="stat-label">
+                  <span>♡ Kết nối xã hội</span>
+                  <strong id="relationValue">30</strong>
+                </div>
+                <div class="stat-track">
+                  <div class="stat-fill relation" id="relationBar"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>HÀNH TRÌNH</h3>
+          </div>
+
+          <div class="panel-body">
+            <div class="eyebrow">Tiến độ cuộc đời</div>
+            <div class="progress-track">
+              <div class="progress-fill" id="lifeProgress"></div>
+            </div>
+            <div class="stat-label">
+              <span id="progressLabel">Bắt đầu</span>
+              <strong id="progressPercent">0%</strong>
+            </div>
+
+            <div style="margin-top:18px" class="eyebrow">
+              Những cột mốc
+            </div>
+            <div id="milestoneList" class="journal-list" style="margin-top:10px">
+              <div class="journal-entry">Chưa có cột mốc nào.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>NHỮNG NGƯỜI QUAN TRỌNG</h3>
+            <button class="pixel-button small" id="openPeople" type="button">
+              Chi tiết
+            </button>
+          </div>
+
+          <div class="panel-body">
+            <div id="peopleList" class="people-list"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>HỒ SƠ CUỘC ĐỜI</h3>
+          </div>
+
+          <div class="panel-body">
+            <div class="sidebar-actions">
+              <button class="pixel-button small" id="saveButtonSide" type="button">
+                Lưu tiến trình
+              </button>
+              <button class="pixel-button small" id="loadButtonSide" type="button">
+                Tải tiến trình
+              </button>
+              <button class="pixel-button small pink" id="openJournalSide" type="button">
+                Nhật ký
+              </button>
+              <button class="pixel-button small blue" id="restartButton" type="button">
+                Cuộc đời mới
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </section>
+
+  <!-- KẾT THÚC CUỘC ĐỜI -->
+  <section id="endingScreen" class="panel ending-screen" hidden>
+    <div class="eyebrow">THE END · A LIFE REMEMBERED</div>
+    <h2 id="endingTitle">Cuốn sách cuộc đời khép lại</h2>
+    <p class="ending-story" id="endingStory"></p>
+
+    <div class="ending-stat-grid" id="endingStats"></div>
+
+    <section class="panel" style="margin-top:20px">
+      <div class="panel-header">
+        <h3>NHỮNG ĐIỀU BẠN ĐỂ LẠI</h3>
+      </div>
+      <div class="panel-body" id="endingLegacy"></div>
+    </section>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:22px">
+      <button class="pixel-button primary" id="newLifeButton" type="button">
+        Bắt đầu cuộc đời khác
+      </button>
+      <button class="pixel-button" id="endingJournalButton" type="button">
+        Đọc lại nhật ký
+      </button>
+      <button class="pixel-button" id="endingSaveButton" type="button">
+        Lưu kỷ niệm
+      </button>
+    </div>
+  </section>
+
+  <footer class="game-footer">
+    DECISION SIMULATOR · PIXEL LIFE<br>
+    Một cuộc đời không được quyết định bởi một lựa chọn duy nhất,
+    mà bởi cả hành trình ta đi qua.
+  </footer>
+
+</main>
+
+<!-- HƯỚNG DẪN CHƠI -->
+<div id="helpOverlay" class="help-overlay" aria-hidden="true">
+  <section class="help-window" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <header class="help-header">
+      <div>
+        <div class="help-label">PIXEL LIFE HANDBOOK</div>
+        <h2 id="helpTitle">Hướng dẫn sinh tồn</h2>
+        <p>Cuộc đời của bạn, những lựa chọn của bạn.</p>
+      </div>
+      <button id="closeHelp" class="help-close" type="button" aria-label="Đóng hướng dẫn">×</button>
+    </header>
+
+    <div class="help-content">
+
+      <article class="help-section">
+        <div class="help-icon">01</div>
+        <div>
+          <h3>Bắt đầu hành trình</h3>
+          <p>
+            Tạo nhân vật bằng cách chọn tên, giới tính, tính cách,
+            hoàn cảnh gia đình và độ khó. Những lựa chọn ban đầu
+            có thể ảnh hưởng đến nguồn lực và trải nghiệm của bạn.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">02</div>
+        <div>
+          <h3>Đọc câu chuyện và đưa ra quyết định</h3>
+          <p>
+            Mỗi chương đưa bạn đến một tình huống trong cuộc đời.
+            Đọc kỹ các phương án rồi chọn cách ứng xử phù hợp với
+            giá trị và mục tiêu của nhân vật. Không có lựa chọn nào
+            luôn tốt nhất trong mọi hoàn cảnh.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">03</div>
+        <div>
+          <h3>Hành động hằng ngày</h3>
+          <p>
+            Học tập, nghỉ ngơi, làm việc, trò chuyện hoặc phát triển
+            kỹ năng có thể giúp bạn cải thiện một số mặt của cuộc sống.
+            Mỗi lượt có giới hạn hành động, vì vậy hãy cân nhắc
+            điều nhân vật cần nhất ở thời điểm hiện tại.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">04</div>
+        <div>
+          <h3>Hiểu các chỉ số</h3>
+          <p>
+            <b>Sức khỏe:</b> tình trạng thể chất và khả năng duy trì
+            hoạt động.<br>
+            <b>Năng lượng:</b> nguồn lực cho các hoạt động trong ngày.<br>
+            <b>Tinh thần:</b> trạng thái cảm xúc và khả năng cân bằng.<br>
+            <b>Kỹ năng:</b> kinh nghiệm, kiến thức và năng lực.<br>
+            <b>Tài chính:</b> nguồn tiền dùng cho các nhu cầu.<br>
+            <b>Kết nối xã hội:</b> mức độ gắn kết với mọi người.
+          </p>
+          <p>
+            Chỉ số cao không tự động đồng nghĩa với một cuộc đời
+            hạnh phúc. Điều quan trọng là sự cân bằng và những
+            lựa chọn có ý nghĩa đối với bạn.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">05</div>
+        <div>
+          <h3>Xây dựng các mối quan hệ</h3>
+          <p>
+            Gia đình, bạn bè và những người bạn gặp trên đường đời
+            có thể đem đến sự hỗ trợ, thử thách hoặc những góc nhìn
+            mới. Lời nói và hành động của bạn có thể ảnh hưởng
+            đến sự tin tưởng giữa các nhân vật.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">06</div>
+        <div>
+          <h3>Nhật ký và cột mốc</h3>
+          <p>
+            Nhật ký ghi lại các sự kiện và quyết định đáng nhớ.
+            Những cột mốc giúp bạn theo dõi hành trình từ tuổi thơ
+            đến các giai đoạn trưởng thành. Hãy xem lại để nhận ra
+            nhân vật đã thay đổi ra sao.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">07</div>
+        <div>
+          <h3>Lưu và tải tiến trình</h3>
+          <p>
+            Chọn <b>Lưu</b> để lưu cuộc đời hiện tại vào trình duyệt.
+            Chọn <b>Tải</b> để tiếp tục từ dữ liệu đã lưu trên thiết bị
+            và trình duyệt đó. Xóa dữ liệu trình duyệt có thể làm mất
+            tiến trình đã lưu.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section">
+        <div class="help-icon">08</div>
+        <div>
+          <h3>Khi nào cuộc đời kết thúc?</h3>
+          <p>
+            Hãy tiếp tục qua các chương và những giai đoạn khác nhau.
+            Ở cuối hành trình, trò chơi tổng kết các cột mốc,
+            mối quan hệ và những lựa chọn đã góp phần tạo nên
+            câu chuyện riêng của nhân vật.
+          </p>
+        </div>
+      </article>
+
+      <article class="help-section help-highlight">
+        <div class="help-icon">★</div>
+        <div>
+          <h3>Đừng cố sống một cuộc đời hoàn hảo</h3>
+          <p>
+            Mục tiêu không phải chọn thật nhanh hay luôn đưa ra
+            quyết định đúng. Hãy cân nhắc điều gì quan trọng,
+            hiểu những đánh đổi và học hỏi từ kết quả. Một cuộc đời
+            đáng nhớ không nhất thiết là cuộc đời không có sai lầm.
+          </p>
+        </div>
+      </article>
+
+    </div>
+
+    <footer class="help-footer">
+      <span>PIXEL LIFE · EVERY CHOICE TELLS A STORY</span>
+      <button id="startPlaying" type="button">Đã hiểu — tiếp tục chơi →</button>
+    </footer>
+  </section>
+</div>
+
+<!-- MODAL DÙNG CHUNG CHO NHẬT KÝ / NHÂN VẬT -->
+<div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+  <section class="modal-window" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <header class="help-header">
+      <div>
+        <div class="help-label">PIXEL LIFE ARCHIVE</div>
+        <h2 id="modalTitle">Hồ sơ</h2>
+      </div>
+      <button id="closeModal" class="help-close" type="button" aria-label="Đóng">×</button>
+    </header>
+    <div id="modalContent" class="modal-content"></div>
+  </section>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- PHẦN 2 SẼ ĐƯỢC NỐI TẠI ĐÂY: STORY, DAILY, DỮ LIỆU VÀ CỐT TRUYỆN -->
+  <script>
+"use strict";
+
+/* =========================================================
+   DECISION SIMULATOR — PIXEL LIFE
+   PHẦN 2: STORY DATA, DAILY ACTIONS, NHÂN VẬT VÀ CỐT TRUYỆN
+========================================================= */
+
+/* -------------------------
+   1. CẤU HÌNH TRÒ CHƠI
+------------------------- */
+
+const GAME_CONFIG = {
+  saveKey: "pixelLifeDecisionSimulator_v2",
+  maxStat: 100,
+  minStat: 0,
+  actionsPerDay: 2,
+  maxAge: 90
+};
+
+const STAGES = {
+  birth: {
+    name: "Những năm đầu đời",
+    age: 0,
+    place: "Ngôi nhà nhỏ",
+    art: "interior",
+    object: "house",
+    caption: "Mọi câu chuyện đều bắt đầu từ đây."
+  },
+
+  childHome: {
+    name: "Tuổi thơ",
+    age: 7,
+    place: "Khu vườn tuổi thơ",
+    art: "outdoor",
+    object: "house",
+    caption: "Thế giới rộng lớn qua đôi mắt trẻ thơ."
+  },
+
+  schoolFirst: {
+    name: "Những ngày đến trường",
+    age: 11,
+    place: "Sân trường",
+    art: "outdoor",
+    object: "school",
+    caption: "Một cánh cửa mới mở ra."
+  },
+
+  friendTrouble: {
+    name: "Tình bạn và trưởng thành",
+    age: 14,
+    place: "Góc sân trường",
+    art: "outdoor",
+    object: "tree",
+    caption: "Không phải điều gì cũng dễ nói thành lời."
+  },
+
+  studyPressure: {
+    name: "Những năm tháng áp lực",
+    age: 16,
+    place: "Góc học tập",
+    art: "interior",
+    object: "window",
+    caption: "Ước mơ đôi khi đi cùng những đêm dài."
+  },
+
+  examOutcome: {
+    name: "Bước ngoặt",
+    age: 18,
+    place: "Ngã rẽ tương lai",
+    art: "outdoor",
+    object: "school",
+    caption: "Một kết quả không thể kể hết câu chuyện."
+  },
+
+  groupProject: {
+    name: "Học cách đồng hành",
+    age: 21,
+    place: "Thư viện",
+    art: "interior",
+    object: "window",
+    caption: "Không ai trưởng thành hoàn toàn một mình."
+  },
+
+  futureChoice: {
+    name: "Chọn con đường của mình",
+    age: 25,
+    place: "Thành phố",
+    art: "city",
+    object: "city-building",
+    caption: "Có nhiều con đường để sống một cuộc đời ý nghĩa."
+  },
+
+  career: {
+    name: "Xây dựng sự nghiệp",
+    age: 35,
+    place: "Nơi làm việc",
+    art: "city",
+    object: "city-building",
+    caption: "Thành công cần được định nghĩa bằng chính bạn."
+  },
+
+  midlife: {
+    name: "Giữa hành trình",
+    age: 55,
+    place: "Ngôi nhà thân thuộc",
+    art: "interior",
+    object: "window",
+    caption: "Đôi khi, điều quan trọng là nhìn lại."
+  },
+
+  elder: {
+    name: "Những năm tháng cuối hành trình",
+    age: 75,
+    place: "Khu vườn bình yên",
+    art: "night",
+    object: "tree",
+    caption: "Một cuộc đời được nhớ bằng nhiều điều nhỏ bé."
+  }
+};
+
+/* -------------------------
+   2. NHÂN VẬT VÀ CHỈ SỐ
+------------------------- */
+
+function createInitialStats() {
+  return {
+    health: 70,
+    energy: 75,
+    mind: 70,
+    skill: 10,
+    money: 20,
+    relation: 30
+  };
+}
+
+function createInitialPeople() {
+  return {
+    family: {
+      name: "Gia đình",
+      icon: "⌂",
+      relation: 55,
+      description: "Những người đầu tiên bước vào cuộc đời bạn."
+    },
+
+    friend: {
+      name: "Người bạn thân",
+      icon: "♡",
+      relation: 20,
+      description: "Một người có thể cùng bạn chia sẻ nhiều điều."
+    },
+
+    mentor: {
+      name: "Người dẫn đường",
+      icon: "✎",
+      relation: 10,
+      description: "Người giúp bạn nhìn thấy một hướng đi khác."
+    },
+
+    partner: {
+      name: "Người đồng hành",
+      icon: "✿",
+      relation: 10,
+      description: "Một mối quan hệ sẽ thay đổi theo lựa chọn của bạn."
+    },
+
+    community: {
+      name: "Cộng đồng",
+      icon: "⌘",
+      relation: 20,
+      description: "Những người bạn gặp trong học tập và công việc."
+    }
+  };
+}
+
+/* -------------------------
+   3. CÁC CHƯƠNG TRUYỆN
+   Mỗi chương có đúng 5 lựa chọn.
+   Effects là mức thay đổi chỉ số.
+   people là thay đổi quan hệ.
+------------------------- */
+
+const STORY = {
+
+  /* ===== CHƯƠNG 1: SINH RA ===== */
+
+  birth: {
+    title: "Một cuộc đời bắt đầu",
+    stage: "Những năm đầu đời",
+    age: 0,
+    next: "childHome",
+    text:
+      "Bạn đến với thế giới trong một ngày bình thường. " +
+      "Chưa có ước mơ, chưa có lựa chọn, chưa biết ngày mai sẽ ra sao. " +
+      "Những người xung quanh bắt đầu đặt vào bạn những hy vọng đầu tiên.\n\n" +
+      "Những năm tháng đầu đời chưa do bạn quyết định, nhưng hoàn cảnh " +
+      "ban đầu sẽ ảnh hưởng đến những cơ hội và thử thách bạn gặp sau này.",
+    choices: [
+      {
+        title: "Một mái nhà ổn định",
+        desc: "Bạn lớn lên trong môi trường có sự quan tâm và tương đối đủ đầy.",
+        effects: { health: 8, mind: 8, relation: 8, money: 8 },
+        people: { family: 10 },
+        flag: "supportedChildhood",
+        outcome: "Sự ổn định mang đến cho bạn một điểm tựa ban đầu."
+      },
+      {
+        title: "Học cách tự lập từ sớm",
+        desc: "Gia đình có những khó khăn khiến mọi người phải cùng cố gắng.",
+        effects: { skill: 5, energy: -3, money: -3, mind: -2 },
+        people: { family: 6 },
+        flag: "earlyIndependence",
+        outcome: "Bạn sớm nhận ra rằng nhiều điều quý giá cần được vun đắp."
+      },
+      {
+        title: "Một tuổi thơ nhiều thay đổi",
+        desc: "Cuộc sống thường xuyên đổi khác, nhưng bạn có cơ hội gặp nhiều người.",
+        effects: { skill: 3, relation: 5, mind: -3 },
+        people: { community: 5 },
+        flag: "changingChildhood",
+        outcome: "Những thay đổi đầu đời dạy bạn thích nghi với hoàn cảnh."
+      },
+      {
+        title: "Được khuyến khích khám phá",
+        desc: "Người lớn tạo điều kiện để bạn đặt câu hỏi và thử những điều mới.",
+        effects: { skill: 6, mind: 5, relation: 4 },
+        people: { family: 7 },
+        flag: "curiousChildhood",
+        outcome: "Bạn bắt đầu nhìn thế giới như một nơi có nhiều điều đáng khám phá."
+      },
+      {
+        title: "Một khởi đầu bình dị",
+        desc: "Không có điều gì quá nổi bật, nhưng cuộc sống vẫn tiếp diễn từng ngày.",
+        effects: { health: 3, energy: 3, mind: 3, relation: 3 },
+        people: { family: 4 },
+        flag: "ordinaryChildhood",
+        outcome: "Một khởi đầu bình dị cũng có thể mở ra vô số khả năng."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 2: TUỔI THƠ ===== */
+
+  childHome: {
+    title: "Thế giới trong khu vườn nhỏ",
+    stage: "Tuổi thơ",
+    age: 7,
+    next: "schoolFirst",
+    text:
+      "Bạn bắt đầu nhận ra thế giới không chỉ gồm ngôi nhà của mình. " +
+      "Có những con đường chưa từng đi qua, những người bạn chưa từng gặp " +
+      "và những câu hỏi mà người lớn không phải lúc nào cũng trả lời được.\n\n" +
+      "Một buổi chiều, bạn có cơ hội lựa chọn cách dành thời gian của mình.",
+    choices: [
+      {
+        title: "Ở bên gia đình",
+        desc: "Dành thời gian trò chuyện, phụ giúp và lắng nghe người thân.",
+        effects: { mind: 5, relation: 7, energy: 2 },
+        people: { family: 10 },
+        flag: "familyTime",
+        outcome: "Bạn nhận ra sự gắn bó được hình thành từ những việc nhỏ."
+      },
+      {
+        title: "Ra ngoài khám phá",
+        desc: "Tìm hiểu khu phố, quan sát thiên nhiên và thử điều mới.",
+        effects: { skill: 5, mind: 4, energy: -2 },
+        people: { community: 4 },
+        flag: "explorer",
+        outcome: "Sự tò mò khiến thế giới quanh bạn trở nên rộng lớn hơn."
+      },
+      {
+        title: "Đọc một cuốn sách",
+        desc: "Tìm thấy những thế giới khác qua từng trang giấy.",
+        effects: { skill: 7, mind: 3, energy: -1 },
+        people: { mentor: 2 },
+        flag: "youngReader",
+        outcome: "Bạn hiểu rằng có thể học được nhiều điều ngay cả khi đứng yên."
+      },
+      {
+        title: "Giúp đỡ người khác",
+        desc: "Chia sẻ đồ chơi hoặc giúp một người đang gặp khó khăn.",
+        effects: { relation: 7, mind: 3, energy: -2 },
+        people: { community: 7, family: 3 },
+        flag: "helpfulChild",
+        outcome: "Bạn bắt đầu hiểu rằng sự tử tế không cần phải thật lớn lao."
+      },
+      {
+        title: "Dành thời gian nghỉ ngơi",
+        desc: "Cho mình một buổi chiều yên tĩnh, không cần phải làm gì đặc biệt.",
+        effects: { health: 4, energy: 8, mind: 5 },
+        people: {},
+        flag: "valuesRest",
+        outcome: "Bạn học được rằng nghỉ ngơi cũng là một phần của trưởng thành."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 3: ĐẾN TRƯỜNG ===== */
+
+  schoolFirst: {
+    title: "Cánh cửa lớp học",
+    stage: "Những ngày đến trường",
+    age: 11,
+    next: "friendTrouble",
+    text:
+      "Ngày đầu tiên ở một môi trường mới, mọi thứ dường như đều xa lạ. " +
+      "Bạn phải học cách làm quen với bạn bè, thầy cô và những yêu cầu " +
+      "khác trước đây.\n\n" +
+      "Trong lớp có nhiều cách để một người tìm thấy vị trí của mình. " +
+      "Bạn muốn bắt đầu từ đâu?",
+    choices: [
+      {
+        title: "Tập trung vào việc học",
+        desc: "Xây dựng nền tảng kiến thức và hoàn thành nhiệm vụ của mình.",
+        effects: { skill: 9, energy: -5, mind: -2 },
+        people: { mentor: 4 },
+        flag: "studyFocused",
+        outcome: "Bạn có nền tảng tốt hơn, nhưng cũng cần học cách cân bằng."
+      },
+      {
+        title: "Chủ động làm quen",
+        desc: "Bắt chuyện với bạn cùng lớp và tham gia hoạt động chung.",
+        effects: { relation: 9, mind: 3, energy: -2 },
+        people: { friend: 9, community: 5 },
+        flag: "socialLearner",
+        outcome: "Bạn nhận ra đôi khi một lời chào là đủ để mở đầu tình bạn."
+      },
+      {
+        title: "Thử tham gia câu lạc bộ",
+        desc: "Tìm một nơi phù hợp với sở thích và năng lực của mình.",
+        effects: { skill: 5, relation: 5, energy: -3 },
+        people: { friend: 4, mentor: 5 },
+        flag: "clubMember",
+        outcome: "Bạn tìm thấy cơ hội phát triển ngoài khuôn khổ lớp học."
+      },
+      {
+        title: "Quan sát trước khi hòa nhập",
+        desc: "Lắng nghe, tìm hiểu môi trường rồi mới quyết định tham gia.",
+        effects: { skill: 4, mind: 5, energy: 2 },
+        people: { mentor: 2 },
+        flag: "carefulObserver",
+        outcome: "Bạn có thêm thời gian hiểu môi trường trước khi hành động."
+      },
+      {
+        title: "Thử sức với một thử thách",
+        desc: "Đăng ký một cuộc thi hoặc nhiệm vụ khiến bạn hơi lo lắng.",
+        effects: { skill: 7, mind: -2, energy: -4 },
+        people: { mentor: 4, community: 3 },
+        flag: "earlyChallenge",
+        outcome: "Bạn học được nhiều hơn từ trải nghiệm thực tế."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 4: TÌNH BẠN ===== */
+
+  friendTrouble: {
+    title: "Điều chưa thể nói thành lời",
+    stage: "Tình bạn và trưởng thành",
+    age: 14,
+    next: "studyPressure",
+    text:
+      "Một người bạn thân bỗng ít trò chuyện với bạn hơn trước. " +
+      "Bạn nghe được vài lời kể khác nhau nhưng chưa biết chuyện gì " +
+      "thực sự đã xảy ra.\n\n" +
+      "Bạn có thể hành động ngay, chờ thêm thông tin hoặc thẳng thắn " +
+      "nói chuyện. Mỗi cách đều có cái giá riêng.",
+    choices: [
+      {
+        title: "Chủ động hỏi chuyện",
+        desc: "Bình tĩnh nói chuyện riêng và lắng nghe điều bạn ấy muốn chia sẻ.",
+        effects: { relation: 5, mind: 3, energy: -2 },
+        people: { friend: 12 },
+        flag: "talkedToFriend",
+        outcome: "Một cuộc trò chuyện chân thành có thể làm sáng tỏ hiểu lầm."
+      },
+      {
+        title: "Cho nhau một khoảng lặng",
+        desc: "Không ép buộc, chờ đến khi cả hai sẵn sàng trò chuyện.",
+        effects: { mind: 5, energy: 2, relation: -1 },
+        people: { friend: 2 },
+        flag: "gaveSpace",
+        outcome: "Khoảng cách đôi khi giúp cảm xúc lắng xuống, nhưng không tự giải quyết mọi vấn đề."
+      },
+      {
+        title: "Tìm hiểu từ nhiều phía",
+        desc: "Lắng nghe thêm thông tin trước khi hình thành kết luận.",
+        effects: { skill: 4, mind: -2, relation: -2 },
+        people: { friend: -2, community: 2 },
+        flag: "investigatedRumor",
+        outcome: "Bạn có thêm thông tin, nhưng cũng cần tránh biến việc tìm hiểu thành lan truyền lời đồn."
+      },
+      {
+        title: "Tâm sự với người đáng tin",
+        desc: "Xin lời khuyên từ một người có thể giúp bạn nhìn sự việc rõ hơn.",
+        effects: { mind: 6, relation: 3 },
+        people: { family: 4, mentor: 5 },
+        flag: "soughtAdvice",
+        outcome: "Một góc nhìn khác giúp bạn bớt phải tự mình gánh mọi suy nghĩ."
+      },
+      {
+        title: "Tạm tập trung vào bản thân",
+        desc: "Tiếp tục việc học và sở thích, không để chuyện này chi phối mọi ngày.",
+        effects: { skill: 3, energy: 4, mind: 3, relation: -2 },
+        people: {},
+        flag: "focusedSelf",
+        outcome: "Bạn vẫn có thể chăm sóc bản thân trong lúc chưa tìm được lời giải."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 5: ÁP LỰC HỌC TẬP ===== */
+
+  studyPressure: {
+    title: "Những đêm dài trước kỳ thi",
+    stage: "Những năm tháng áp lực",
+    age: 16,
+    next: "examOutcome",
+    text:
+      "Kỳ thi quan trọng đang đến gần. Bạn có nhiều mục tiêu, nhưng " +
+      "thời gian, sức lực và sự tập trung đều có giới hạn. Người khác " +
+      "đưa ra nhiều lời khuyên trái ngược nhau.\n\n" +
+      "Bạn cần quyết định cách chuẩn bị mà mình có thể duy trì lâu dài.",
+    choices: [
+      {
+        title: "Lập kế hoạch rõ ràng",
+        desc: "Chia nhỏ nhiệm vụ, xác định ưu tiên và dành thời gian nghỉ.",
+        effects: { skill: 8, mind: 5, energy: -3 },
+        people: { family: 2 },
+        flag: "plannedStudy",
+        outcome: "Một kế hoạch vừa sức giúp bạn biết mình cần làm gì tiếp theo."
+      },
+      {
+        title: "Tìm thêm nhiều tài liệu",
+        desc: "Mở rộng nguồn học để tìm cách giải thích phù hợp nhất.",
+        effects: { skill: 7, energy: -6, mind: -5 },
+        people: { mentor: 3 },
+        flag: "manyResources",
+        outcome: "Bạn có thêm kiến thức, nhưng phải tự chọn lọc điều thật sự cần thiết."
+      },
+      {
+        title: "Trao đổi với thầy cô",
+        desc: "Hỏi rõ phần chưa hiểu và xin phản hồi về cách học.",
+        effects: { skill: 8, mind: 4, energy: -2 },
+        people: { mentor: 10 },
+        flag: "askedTeacher",
+        outcome: "Phản hồi cụ thể giúp bạn tập trung vào những điểm cần cải thiện."
+      },
+      {
+        title: "Giữ sức khỏe và nhịp sinh hoạt",
+        desc: "Điều chỉnh lịch học để có giấc ngủ và thời gian hồi phục phù hợp.",
+        effects: { health: 8, energy: 10, mind: 8, skill: 2 },
+        people: { family: 3 },
+        flag: "balancedStudy",
+        outcome: "Bạn hiểu rằng học tập hiệu quả cần cả sự tập trung lẫn khả năng hồi phục."
+      },
+      {
+        title: "Thử một phương pháp mới",
+        desc: "Thay đổi cách ôn tập, luyện đề hoặc tự kiểm tra kiến thức.",
+        effects: { skill: 6, mind: 2, energy: -3 },
+        people: { mentor: 2 },
+        flag: "newStudyMethod",
+        outcome: "Bạn có cơ hội tìm ra cách học phù hợp hơn với chính mình."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 6: KẾT QUẢ KỲ THI ===== */
+
+  examOutcome: {
+    title: "Kết quả không kể hết câu chuyện",
+    stage: "Bước ngoặt",
+    age: 18,
+    next: "groupProject",
+    text:
+      "Kết quả của một kỳ thi quan trọng đã xuất hiện. Nó có thể gần " +
+      "với mong đợi, thấp hơn kỳ vọng hoặc mở ra một hướng đi bất ngờ.\n\n" +
+      "Bạn không thể thay đổi kết quả đã có. Điều bạn có thể lựa chọn " +
+      "là cách nhìn nhận nó và bước tiếp theo của mình.",
+    choices: [
+      {
+        title: "Đánh giá lại quá trình",
+        desc: "Xem điều gì đã hiệu quả và điều gì cần thay đổi.",
+        effects: { skill: 7, mind: 4, energy: -2 },
+        people: { mentor: 3 },
+        flag: "reflectedExam",
+        outcome: "Bạn biến kết quả thành thông tin để điều chỉnh kế hoạch."
+      },
+      {
+        title: "Thử một con đường khác",
+        desc: "Tìm hiểu lựa chọn thay thế thay vì bám vào một phương án duy nhất.",
+        effects: { skill: 5, mind: 3, energy: -3 },
+        people: { community: 4 },
+        flag: "alternatePath",
+        outcome: "Một cánh cửa đóng lại không có nghĩa mọi cánh cửa đều đóng."
+      },
+      {
+        title: "Xin hỗ trợ và tư vấn",
+        desc: "Trao đổi với người đáng tin để nhìn rõ các lựa chọn thực tế.",
+        effects: { mind: 6, relation: 4, skill: 2 },
+        people: { family: 5, mentor: 7 },
+        flag: "examSupport",
+        outcome: "Bạn không cần tự mình giải quyết mọi câu hỏi về tương lai."
+      },
+      {
+        title: "Dành thời gian hồi phục",
+        desc: "Tạm dừng để cân bằng cảm xúc trước khi quyết định bước tiếp.",
+        effects: { health: 5, energy: 9, mind: 8 },
+        people: { family: 3 },
+        flag: "recoveredExam",
+        outcome: "Nghỉ ngơi giúp bạn có khoảng cách cần thiết để nhìn nhận sự việc."
+      },
+      {
+        title: "Kiên trì theo đuổi mục tiêu",
+        desc: "Tiếp tục cố gắng, nhưng điều chỉnh cách thực hiện cho phù hợp.",
+        effects: { skill: 8, energy: -5, mind: -2 },
+        people: { mentor: 3 },
+        flag: "persistentGoal",
+        outcome: "Sự kiên trì có ích nhất khi đi cùng khả năng học hỏi và điều chỉnh."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 7: HỢP TÁC ===== */
+
+  groupProject: {
+    title: "Một việc không thể làm một mình",
+    stage: "Học cách đồng hành",
+    age: 21,
+    next: "futureChoice",
+    text:
+      "Trong một dự án quan trọng, mỗi người có một cách làm và một " +
+      "quan điểm riêng. Có người làm nhanh, có người cẩn thận; có người " +
+      "nói nhiều, có người đóng góp trong im lặng.\n\n" +
+      "Kết quả chung phụ thuộc vào cách mọi người giải quyết sự khác biệt.",
+    choices: [
+      {
+        title: "Chia việc theo thế mạnh",
+        desc: "Thống nhất mục tiêu, phân công rõ và kiểm tra tiến độ.",
+        effects: { skill: 8, relation: 6, energy: -3 },
+        people: { community: 9, mentor: 2 },
+        flag: "delegatedWork",
+        outcome: "Sự rõ ràng giúp nhóm phối hợp tốt hơn."
+      },
+      {
+        title: "Nhận phần khó nhất",
+        desc: "Tự đảm nhận nhiệm vụ phức tạp để bảo đảm tiến độ.",
+        effects: { skill: 9, energy: -8, mind: -3 },
+        people: { community: 3 },
+        flag: "tookHardTask",
+        outcome: "Bạn tiến bộ nhanh, nhưng cũng nhận ra giới hạn của việc ôm đồm."
+      },
+      {
+        title: "Lắng nghe các ý kiến khác nhau",
+        desc: "Tạo cơ hội để mọi thành viên giải thích quan điểm.",
+        effects: { relation: 8, mind: 5, skill: 3 },
+        people: { community: 10 },
+        flag: "listenedToGroup",
+        outcome: "Bạn thấy rằng bất đồng không nhất thiết phải trở thành xung đột."
+      },
+      {
+        title: "Đề xuất thử nghiệm nhỏ",
+        desc: "Thử một phương án trong phạm vi nhỏ trước khi quyết định.",
+        effects: { skill: 8, mind: 3, energy: -3 },
+        people: { community: 6, mentor: 3 },
+        flag: "testedApproach",
+        outcome: "Một thử nghiệm có giới hạn giúp nhóm giảm bớt phỏng đoán."
+      },
+      {
+        title: "Bảo vệ quan điểm của mình",
+        desc: "Trình bày lập luận rõ ràng, đồng thời sẵn sàng tiếp nhận phản hồi.",
+        effects: { skill: 6, mind: 3, relation: -1 },
+        people: { community: 2 },
+        flag: "defendedOpinion",
+        outcome: "Bạn học cách giữ vững lập trường mà không ngừng lắng nghe."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 8: LỰA CHỌN TƯƠNG LAI ===== */
+
+  futureChoice: {
+    title: "Con đường nào là của bạn?",
+    stage: "Chọn con đường của mình",
+    age: 25,
+    next: "career",
+    text:
+      "Bạn đứng trước nhiều khả năng: một công việc ổn định, một cơ hội " +
+      "thử sức, con đường học tập dài hơn hoặc một lựa chọn chưa thật " +
+      "sự rõ ràng.\n\n" +
+      "Bạn không thể biết chính xác mọi kết quả. Thay vì chờ chắc chắn " +
+      "tuyệt đối, hãy cân nhắc điều mình coi trọng và rủi ro có thể chấp nhận.",
+    choices: [
+      {
+        title: "Chọn sự ổn định",
+        desc: "Ưu tiên nguồn thu nhập và nhịp sống có thể dự đoán.",
+        effects: { money: 9, mind: 5, energy: 2, skill: 2 },
+        people: { family: 5 },
+        flag: "stablePath",
+        outcome: "Sự ổn định đem lại điểm tựa, dù không phải lúc nào cũng đáp ứng mọi khát vọng."
+      },
+      {
+        title: "Theo đuổi đam mê",
+        desc: "Chọn lĩnh vực khiến bạn thực sự muốn dành thời gian phát triển.",
+        effects: { skill: 8, mind: 7, money: -5, energy: -3 },
+        people: { community: 4 },
+        flag: "passionPath",
+        outcome: "Bạn tìm thấy động lực, đồng thời phải học cách quản lý nguồn lực."
+      },
+      {
+        title: "Tiếp tục học tập",
+        desc: "Đầu tư thời gian để mở rộng kiến thức và chuyên môn.",
+        effects: { skill: 10, money: -5, energy: -4, mind: 2 },
+        people: { mentor: 6 },
+        flag: "continuedEducation",
+        outcome: "Bạn xây dựng nền tảng dài hạn, dù thành quả có thể chưa đến ngay."
+      },
+      {
+        title: "Bắt đầu một dự án riêng",
+        desc: "Thử biến ý tưởng thành sản phẩm hoặc dịch vụ thực tế.",
+        effects: { skill: 8, money: -7, mind: -2, energy: -6 },
+        people: { community: 7, mentor: 2 },
+        flag: "startedVenture",
+        outcome: "Bạn học bằng trải nghiệm, nhưng cần chấp nhận sự không chắc chắn."
+      },
+      {
+        title: "Tìm người hướng dẫn",
+        desc: "Xin tư vấn, kiểm tra giả định và xây dựng kế hoạch trước khi cam kết.",
+        effects: { skill: 6, mind: 7, relation: 3, energy: -1 },
+        people: { mentor: 10, community: 3 },
+        flag: "careerMentor",
+        outcome: "Một cuộc trao đổi tốt có thể giúp bạn thấy những lựa chọn trước đây chưa nhận ra."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 9: SỰ NGHIỆP ===== */
+
+  career: {
+    title: "Thành công được định nghĩa thế nào?",
+    stage: "Xây dựng sự nghiệp",
+    age: 35,
+    next: "midlife",
+    text:
+      "Sau nhiều năm làm việc, bạn đã có kinh nghiệm và một vị trí nhất định. " +
+      "Nhưng cùng với trách nhiệm là những đánh đổi về thời gian, sức khỏe " +
+      "và các mối quan hệ.\n\n" +
+      "Một cơ hội mới xuất hiện. Bạn muốn định nghĩa thành công theo cách nào?",
+    choices: [
+      {
+        title: "Theo đuổi vị trí cao hơn",
+        desc: "Nhận thêm trách nhiệm để mở rộng năng lực và cơ hội nghề nghiệp.",
+        effects: { skill: 8, money: 10, energy: -7, mind: -3 },
+        people: { community: 5 },
+        flag: "careerAmbition",
+        outcome: "Bạn tiến xa hơn trong công việc, nhưng cần quan sát cái giá của sự tiến bộ."
+      },
+      {
+        title: "Ưu tiên cân bằng cuộc sống",
+        desc: "Điều chỉnh công việc để có thêm thời gian cho bản thân và gia đình.",
+        effects: { health: 7, energy: 8, mind: 7, money: -2 },
+        people: { family: 8, partner: 5 },
+        flag: "workLifeBalance",
+        outcome: "Bạn dành nhiều nguồn lực hơn cho những điều nằm ngoài công việc."
+      },
+      {
+        title: "Chia sẻ kinh nghiệm",
+        desc: "Hướng dẫn người trẻ và giúp đồng nghiệp phát triển.",
+        effects: { skill: 4, relation: 8, mind: 6 },
+        people: { mentor: 5, community: 10 },
+        flag: "mentoredOthers",
+        outcome: "Kinh nghiệm của bạn tiếp tục có giá trị khi giúp người khác trưởng thành."
+      },
+      {
+        title: "Chuyển hướng nghề nghiệp",
+        desc: "Thử một lĩnh vực mới dù phải học lại một số kỹ năng.",
+        effects: { skill: 6, money: -5, mind: 4, energy: -4 },
+        people: { community: 4 },
+        flag: "careerChange",
+        outcome: "Bạn mở ra cơ hội mới và chấp nhận trở thành người học hỏi một lần nữa."
+      },
+      {
+        title: "Xây dựng một cộng đồng",
+        desc: "Dành thời gian tạo ra điều hữu ích cho những người xung quanh.",
+        effects: { relation: 10, money: -3, mind: 8, energy: -3 },
+        people: { community: 12, family: 3 },
+        flag: "communityBuilder",
+        outcome: "Bạn tìm thấy ý nghĩa trong những giá trị có thể được chia sẻ."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 10: TRUNG NIÊN ===== */
+
+  midlife: {
+    title: "Nhìn lại những điều đã đi qua",
+    stage: "Giữa hành trình",
+    age: 55,
+    next: "elder",
+    text:
+      "Thời gian trôi qua nhanh hơn bạn từng nghĩ. Có những điều đã thành " +
+      "công, có những dự định còn dang dở và có những mối quan hệ đã thay đổi.\n\n" +
+      "Bạn có thể tiếp tục chạy theo mục tiêu cũ, sửa lại những điều cần thiết " +
+      "hoặc dành chỗ cho những điều trước đây chưa từng được ưu tiên.",
+    choices: [
+      {
+        title: "Tiếp tục theo đuổi mục tiêu",
+        desc: "Hoàn thành một dự định quan trọng còn dang dở.",
+        effects: { skill: 4, mind: 3, energy: -5 },
+        people: { community: 3 },
+        flag: "unfinishedGoal",
+        outcome: "Bạn dành thêm nỗ lực cho điều vẫn còn ý nghĩa với mình."
+      },
+      {
+        title: "Hàn gắn một mối quan hệ",
+        desc: "Chủ động trò chuyện với người mà bạn đã xa cách.",
+        effects: { mind: 6, relation: 5 },
+        people: { family: 8, friend: 7, partner: 5 },
+        flag: "reconnected",
+        outcome: "Bạn hiểu rằng một lời hỏi thăm đôi khi có thể mở đầu cho sự kết nối mới."
+      },
+      {
+        title: "Truyền lại kinh nghiệm",
+        desc: "Chia sẻ những điều đã học được với thế hệ tiếp theo.",
+        effects: { relation: 7, mind: 6, skill: 3 },
+        people: { mentor: 8, community: 8 },
+        flag: "passedKnowledge",
+        outcome: "Những bài học của bạn tiếp tục sống trong lựa chọn của người khác."
+      },
+      {
+        title: "Bắt đầu một sở thích mới",
+        desc: "Dành thời gian cho điều khiến bạn tò mò nhưng từng bỏ qua.",
+        effects: { mind: 8, energy: 4, skill: 4 },
+        people: { community: 3 },
+        flag: "newHobby",
+        outcome: "Bạn nhận ra không phải mọi điều mới mẻ đều cần một mục tiêu lớn."
+      },
+      {
+        title: "Chậm lại và chăm sóc sức khỏe",
+        desc: "Điều chỉnh nhịp sống và dành sự quan tâm cho bản thân.",
+        effects: { health: 10, energy: 8, mind: 8, money: -2 },
+        people: { family: 4 },
+        flag: "prioritizedHealth",
+        outcome: "Bạn chọn dành nguồn lực cho sự bình an và khả năng tiếp tục sống tốt."
+      }
+    ]
+  },
+
+  /* ===== CHƯƠNG 11: TUỔI GIÀ ===== */
+
+  elder: {
+    title: "Một buổi chiều nhìn lại",
+    stage: "Những năm tháng cuối hành trình",
+    age: 75,
+    next: null,
+    text:
+      "Bạn ngồi trong khu vườn yên tĩnh, nhìn ánh sáng đổi màu trên những " +
+      "tán cây. Nhiều người đã đến rồi đi, nhiều lựa chọn đã trở thành ký ức.\n\n" +
+      "Bạn không thể sống lại mọi khoảnh khắc. Nhưng bạn có thể lựa chọn " +
+      "cách dành thời gian cho chặng đường còn lại và điều muốn trao lại.",
+    choices: [
+      {
+        title: "Ghi lại câu chuyện cuộc đời",
+        desc: "Viết những kỷ niệm, bài học và điều bạn mong thế hệ sau hiểu được.",
+        effects: { mind: 7, skill: 3, relation: 4 },
+        people: { family: 5, community: 4 },
+        flag: "wroteMemoir",
+        outcome: "Bạn trao cho người khác một góc nhìn về cuộc đời mình."
+      },
+      {
+        title: "Dành thời gian cho người thân",
+        desc: "Tạo thêm những khoảnh khắc giản dị cùng người mình yêu quý.",
+        effects: { mind: 8, relation: 7, energy: 2 },
+        people: { family: 9, partner: 7, friend: 5 },
+        flag: "cherishedLovedOnes",
+        outcome: "Bạn nhận ra những khoảnh khắc bình thường cũng có thể trở thành ký ức quý giá."
+      },
+      {
+        title: "Tiếp tục học hỏi",
+        desc: "Đọc, tìm hiểu hoặc khám phá một điều mới.",
+        effects: { skill: 5, mind: 6, energy: -1 },
+        people: { mentor: 2, community: 3 },
+        flag: "lifelongLearner",
+        outcome: "Sự tò mò không nhất thiết phải kết thúc khi tuổi trẻ qua đi."
+      },
+      {
+        title: "Đóng góp cho cộng đồng",
+        desc: "Chia sẻ thời gian và kinh nghiệm trong khả năng của mình.",
+        effects: { relation: 7, mind: 7, energy: -2 },
+        people: { community: 10 },
+        flag: "elderVolunteer",
+        outcome: "Bạn tiếp tục tìm thấy ý nghĩa trong sự kết nối với mọi người."
+      },
+      {
+        title: "Đón nhận sự bình yên",
+        desc: "Nhìn lại những gì đã có, trân trọng hiện tại và không đòi hỏi bản thân phải làm thêm mọi thứ.",
+        effects: { health: 5, energy: 7, mind: 10 },
+        people: { family: 3 },
+        flag: "foundPeace",
+        outcome: "Bạn cho phép mình trân trọng cuộc đời mà không cần biến mọi điều thành thành tích."
+      }
+    ]
+  }
+
+};
+
+/* -------------------------
+   4. HÀNH ĐỘNG HẰNG NGÀY
+------------------------- */
+
+const DAILY = [
+  {
+    id: "study",
+    icon: "✎",
+    title: "Học tập và rèn luyện",
+    desc: "Tăng kỹ năng, tiêu hao năng lượng.",
+    effects: {
+      skill: 6,
+      energy: -7,
+      mind: -1
+    },
+    message: "Bạn dành thời gian học tập và rèn luyện."
+  },
+
+  {
+    id: "rest",
+    icon: "☾",
+    title: "Nghỉ ngơi",
+    desc: "Hồi phục năng lượng và tinh thần.",
+    effects: {
+      health: 3,
+      energy: 12,
+      mind: 6
+    },
+    message: "Bạn tạm gác công việc để hồi phục."
+  },
+
+  {
+    id: "connect",
+    icon: "♡",
+    title: "Trò chuyện với mọi người",
+    desc: "Cải thiện kết nối xã hội và tinh thần.",
+    effects: {
+      relation: 5,
+      mind: 4,
+      energy: -2
+    },
+    people: {
+      family: 2,
+      friend: 3
+    },
+    message: "Một cuộc trò chuyện giúp ngày hôm nay bớt đơn điệu."
+  },
+
+  {
+    id: "work",
+    icon: "◇",
+    title: "Làm việc hoặc kiếm tiền",
+    desc: "Tăng tài chính, tiêu hao sức lực.",
+    effects: {
+      money: 6,
+      skill: 2,
+      energy: -6,
+      mind: -1
+    },
+    message: "Bạn hoàn thành công việc và tích lũy thêm nguồn lực."
+  },
+
+  {
+    id: "hobby",
+    icon: "✿",
+    title: "Theo đuổi sở thích",
+    desc: "Phát triển bản thân và cân bằng cảm xúc.",
+    effects: {
+      skill: 3,
+      mind: 7,
+      energy: -3
+    },
+    message: "Bạn dành thời gian cho điều mình yêu thích."
+  }
+];
+
+/* -------------------------
+   5. ĐỊNH NGHĨA CÁC CHỈ SỐ
+------------------------- */
+
+const STAT_INFO = {
+  health: {
+    label: "Sức khỏe",
+    description: "Khả năng duy trì hoạt động và chăm sóc bản thân."
+  },
+
+  energy: {
+    label: "Năng lượng",
+    description: "Nguồn lực để thực hiện các hoạt động."
+  },
+
+  mind: {
+    label: "Tinh thần",
+    description: "Trạng thái cảm xúc và khả năng cân bằng."
+  },
+
+  skill: {
+    label: "Kỹ năng",
+    description: "Kiến thức, kinh nghiệm và năng lực tích lũy."
+  },
+
+  money: {
+    label: "Tài chính",
+    description: "Nguồn lực tài chính của nhân vật."
+  },
+
+  relation: {
+    label: "Kết nối xã hội",
+    description: "Mức độ gắn kết với những người xung quanh."
+  }
+};
+
+/* -------------------------
+   6. CÁC MỐC CUỘC ĐỜI
+------------------------- */
+
+const MILESTONES = [
+  { age: 0, label: "Chào đời" },
+  { age: 7, label: "Tuổi thơ" },
+  { age: 11, label: "Đến trường" },
+  { age: 14, label: "Tình bạn" },
+  { age: 16, label: "Đối mặt áp lực" },
+  { age: 18, label: "Bước ngoặt" },
+  { age: 21, label: "Học cách hợp tác" },
+  { age: 25, label: "Tự chọn con đường" },
+  { age: 35, label: "Xây dựng sự nghiệp" },
+  { age: 55, label: "Nhìn lại hành trình" },
+  { age: 75, label: "Tuổi già" }
+];
+
+/* -------------------------
+   7. HÀM KHỞI TẠO DỮ LIỆU
+------------------------- */
+
+function createNewGame(formData) {
+  const stats = createInitialStats();
+
+  let difficultyModifier = 0;
+
+  if (formData.difficulty === "normal") {
+    difficultyModifier = -5;
+  } else if (formData.difficulty === "hard") {
+    difficultyModifier = -12;
+  }
+
+  stats.health += difficultyModifier;
+  stats.energy += difficultyModifier;
+  stats.mind += difficultyModifier;
+
+  if (formData.background === "stable") {
+    stats.money += 15;
+    stats.mind += 5;
+    stats.relation += 5;
+  }
+
+  if (formData.background === "modest") {
+    stats.skill += 3;
+    stats.money -= 3;
+  }
+
+  if (formData.background === "difficult") {
+    stats.money -= 10;
+    stats.mind -= 5;
+    stats.skill += 5;
+  }
+
+  if (formData.temperament === "thoughtful") {
+    stats.mind += 5;
+    stats.skill += 3;
+  }
+
+  if (formData.temperament === "brave") {
+    stats.energy += 5;
+    stats.mind -= 2;
+  }
+
+  if (formData.temperament === "gentle") {
+    stats.relation += 7;
+    stats.mind += 2;
+  }
+
+  if (formData.temperament === "curious") {
+    stats.skill += 5;
+    stats.energy += 2;
+  }
+
+  Object.keys(stats).forEach(key => {
+    stats[key] = clampStat(stats[key]);
+  });
+
+  return {
+    version: 2,
+
+    player: {
+      name: formData.name || "An",
+      gender: formData.gender || "female",
+      temperament: formData.temperament || "thoughtful",
+      background: formData.background || "stable",
+      difficulty: formData.difficulty || "story"
+    },
+
+    stats,
+
+    people: createInitialPeople(),
+
+    currentScene: "birth",
+
+    currentAge: 0,
+
+    sceneIndex: 0,
+
+    day: 1,
+
+    dailyActionsUsed: 0,
+
+    selectedChoice: null,
+
+    waitingForContinue: false,
+
+    lastOutcome: null,
+
+    journal: [],
+
+    flags: [],
+
+    milestones: [],
+
+    decisions: [],
+
+    ending: null,
+
+    startedAt: new Date().toISOString(),
+
+    lastSavedAt: null
+  };
+}
+
+function clampStat(value) {
+  const number = Number(value) || 0;
+
+  return Math.max(
+    GAME_CONFIG.minStat,
+    Math.min(GAME_CONFIG.maxStat, number)
+  );
+}
+
+/* =========================================================
+   KẾT THÚC PHẦN 2
+   PHẦN 3 SẼ BỔ SUNG:
+   - Logic chọn lựa và tính kết quả
+   - Chuyển cảnh, tuổi và tiến trình cuộc đời
+   - Hành động hằng ngày có giới hạn
+   - Giao diện, chỉ số, nhân vật và nhật ký
+   - Lưu/tải, kết thúc cuộc đời và chơi lại
+   - Mở/đóng hướng dẫn và modal
+   - Đóng thẻ HTML hoàn chỉnh
+========================================================= */
+    <script>
+/* =========================================================
+   PHẦN 3 — LOGIC GAME, GIAO DIỆN VÀ HƯỚNG DẪN NGƯỜI CHƠI
+   Sử dụng dữ liệu đã khai báo ở PHẦN 2.
+========================================================= */
+
+(() => {
+  "use strict";
+
+  const $ = (selector, parent = document) => parent.querySelector(selector);
+  const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
+
+  const APP_ID = "pixel-life-decision-simulator";
+  let game = null;
+  let activeModal = null;
+  let noticeTimer = null;
+
+  /* -------------------- GIAO DIỆN -------------------- */
+
+  const css = `
+  #${APP_ID} {
+    --ink:#2e302c; --paper:#fff9e9; --cream:#f6edda;
+    --green:#67896a; --green-dark:#405d48; --orange:#d99057;
+    --pink:#e8b9aa; --blue:#b8d4d7; --line:#d8cbb1;
+    font-family:"Courier New",monospace;color:var(--ink);
+    background:#dce8d3;min-height:100vh;padding:20px;
+    box-sizing:border-box;image-rendering:pixelated;
+  }
+  #${APP_ID} * {box-sizing:border-box}
+  #${APP_ID} button,#${APP_ID} input,#${APP_ID} select {font:inherit}
+  #${APP_ID} button {cursor:pointer}
+  #${APP_ID} button:focus-visible,#${APP_ID} input:focus-visible,
+  #${APP_ID} select:focus-visible {outline:3px solid #d99057;outline-offset:3px}
+  #${APP_ID} .pl-shell {max-width:1320px;margin:auto}
+  #${APP_ID} .pl-topbar {display:flex;justify-content:space-between;gap:12px;
+    align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  #${APP_ID} .pl-brand {font-size:clamp(18px,3vw,28px);font-weight:bold;
+    letter-spacing:-1px}
+  #${APP_ID} .pl-brand small {display:block;font-size:11px;font-weight:normal;
+    letter-spacing:1px;margin-top:5px;color:#52654f}
+  #${APP_ID} .pl-top-actions {display:flex;gap:8px;flex-wrap:wrap}
+  #${APP_ID} .pl-btn {border:2px solid var(--ink);background:var(--paper);
+    box-shadow:3px 3px 0 var(--ink);padding:10px 13px;font-weight:bold;
+    transition:transform .12s,box-shadow .12s}
+  #${APP_ID} .pl-btn:hover {transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink)}
+  #${APP_ID} .pl-btn:active {transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  #${APP_ID} .pl-btn.primary {background:var(--green);color:white}
+  #${APP_ID} .pl-btn.warm {background:#f0c59d}
+  #${APP_ID} .pl-btn.small {padding:7px 9px;font-size:12px}
+  #${APP_ID} .pl-card {background:var(--paper);border:3px solid var(--ink);
+    box-shadow:5px 5px 0 rgba(46,48,44,.22);padding:17px}
+  #${APP_ID} .pl-layout {display:grid;grid-template-columns:minmax(0,1fr) 310px;
+    gap:18px;align-items:start}
+  #${APP_ID} .pl-main {min-width:0}
+  #${APP_ID} .pl-side {display:flex;flex-direction:column;gap:14px}
+  #${APP_ID} .pl-eyebrow {font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+    color:#687a61;font-weight:bold}
+  #${APP_ID} h1,#${APP_ID} h2,#${APP_ID} h3,#${APP_ID} p {margin-top:0}
+  #${APP_ID} h2 {font-size:clamp(20px,3vw,30px);line-height:1.2;margin-bottom:12px}
+  #${APP_ID} h3 {font-size:15px;margin-bottom:12px}
+  #${APP_ID} .pl-muted {color:#6d7067;font-size:12px;line-height:1.6}
+  #${APP_ID} .pl-scene {
+    position:relative;min-height:290px;overflow:hidden;border:3px solid var(--ink);
+    background:#b9d8d5;box-shadow:5px 5px 0 rgba(46,48,44,.22);
+    margin-bottom:18px;isolation:isolate;
+  }
+  #${APP_ID} .pl-sky {position:absolute;inset:0 0 35%;background:#b9d8d5;z-index:-4}
+  #${APP_ID} .pl-sun {position:absolute;width:38px;height:38px;background:#f5d68e;
+    top:24px;right:13%;box-shadow:0 0 0 7px rgba(245,214,142,.25)}
+  #${APP_ID} .pl-cloud {position:absolute;top:55px;left:15%;width:56px;height:13px;
+    background:#fff8e9;box-shadow:12px -8px #fff8e9,24px 0 #fff8e9,36px 6px #fff8e9}
+  #${APP_ID} .pl-hill {position:absolute;bottom:28%;width:65%;height:85px;
+    background:#8eaf85;border-radius:50% 50% 0 0;z-index:-3}
+  #${APP_ID} .pl-hill.one {left:-10%;height:95px}
+  #${APP_ID} .pl-hill.two {right:-12%;height:125px;background:#9cbf8d}
+  #${APP_ID} .pl-ground {position:absolute;bottom:0;left:0;right:0;height:34%;
+    background:#d1b58b;border-top:6px solid #7c9c69;z-index:-2}
+  #${APP_ID} .pl-ground:after {content:"";position:absolute;inset:8px 0 0;
+    background:repeating-linear-gradient(90deg,transparent 0 31px,
+    rgba(80,89,57,.15) 31px 33px),
+    repeating-linear-gradient(0deg,transparent 0 24px,rgba(80,89,57,.12) 24px 26px)}
+  #${APP_ID} .pl-building {position:absolute;bottom:25%;left:50%;transform:translateX(-50%);
+    width:155px;height:112px;background:#f1d7ad;border:5px solid #665747;
+    box-shadow:inset 0 -9px #d5b58a;z-index:-1}
+  #${APP_ID} .pl-roof {position:absolute;left:-17px;right:-17px;top:-29px;height:32px;
+    background:#b66e59;border:5px solid #665747}
+  #${APP_ID} .pl-window {position:absolute;left:18px;top:24px;width:30px;height:30px;
+    background:#a8d6d8;border:4px solid #665747;box-shadow:65px 0 #a8d6d8,65px 0 0 4px #665747}
+  #${APP_ID} .pl-door {position:absolute;left:61px;bottom:0;width:34px;height:57px;
+    background:#a87652;border:4px solid #665747}
+  #${APP_ID} .pl-tree {position:absolute;bottom:26%;width:24px;height:65px;
+    background:#956b4d;z-index:-1}
+  #${APP_ID} .pl-tree:before {content:"";position:absolute;width:65px;height:65px;
+    background:#638b62;left:-20px;top:-43px;box-shadow:0 -9px #638b62,9px -16px #638b62}
+  #${APP_ID} .pl-tree.left {left:13%}
+  #${APP_ID} .pl-tree.right {right:13%;transform:scale(.8)}
+  #${APP_ID} .pl-sprite {position:absolute;bottom:26%;left:50%;transform:translateX(-50%);
+    width:30px;height:50px;z-index:2}
+  #${APP_ID} .pl-sprite .head {position:absolute;left:4px;top:0;width:22px;height:21px;
+    background:#e9b48b;border:3px solid #51463b;box-shadow:0 -5px #51463b}
+  #${APP_ID} .pl-sprite .body {position:absolute;left:3px;top:21px;width:24px;height:19px;
+    background:#67896a;border:3px solid #51463b}
+  #${APP_ID} .pl-sprite .legs {position:absolute;left:5px;top:39px;width:7px;height:11px;
+    background:#51463b;box-shadow:12px 0 #51463b}
+  #${APP_ID} .pl-scene-label {position:absolute;left:14px;top:14px;
+    background:var(--paper);border:2px solid var(--ink);padding:7px 10px;
+    font-size:11px;font-weight:bold;max-width:75%}
+  #${APP_ID} .pl-scene-caption {position:absolute;right:12px;bottom:10px;
+    background:rgba(255,249,233,.9);padding:6px 8px;font-size:10px}
+  #${APP_ID} .pl-story {margin-bottom:18px}
+  #${APP_ID} .pl-story-text {font-family:Georgia,serif;font-size:17px;line-height:1.75;
+    white-space:pre-line}
+  #${APP_ID} .pl-choices {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #${APP_ID} .pl-choice {text-align:left;background:#fffdf5;border:2px solid var(--ink);
+    padding:13px;box-shadow:3px 3px 0 #d6c7ab;min-height:96px;color:var(--ink)}
+  #${APP_ID} .pl-choice:hover {background:#edf2df;transform:translateY(-1px)}
+  #${APP_ID} .pl-choice .num {display:inline-grid;place-items:center;width:22px;height:22px;
+    background:#e7c99f;border:1px solid var(--ink);margin-right:6px;font-size:11px}
+  #${APP_ID} .pl-choice strong {font-size:13px;line-height:1.5}
+  #${APP_ID} .pl-choice small {display:block;margin-top:8px;color:#6e7065;
+    font-family:Arial,sans-serif;font-size:12px;line-height:1.5}
+  #${APP_ID} .pl-choice:disabled {opacity:.5;cursor:not-allowed}
+  #${APP_ID} .pl-outcome {background:#e8f0dd;border:2px dashed #75906c;padding:13px;
+    margin-top:14px;line-height:1.6;font-size:13px}
+  #${APP_ID} .pl-progress {height:13px;background:#e5ddc8;border:2px solid var(--ink);
+    overflow:hidden;margin:9px 0}
+  #${APP_ID} .pl-progress > span {display:block;height:100%;background:#7eaa79;width:0;
+    transition:width .3s}
+  #${APP_ID} .pl-stat {margin:11px 0}
+  #${APP_ID} .pl-stat-head {display:flex;justify-content:space-between;gap:8px;
+    font-size:12px;margin-bottom:5px}
+  #${APP_ID} .pl-stat-bar {height:9px;background:#e7dfcb;border:1px solid #a99d85}
+  #${APP_ID} .pl-stat-fill {height:100%;background:#82a57a}
+  #${APP_ID} .pl-people {display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  #${APP_ID} .pl-person {padding:10px;background:#f2ead8;border:1px solid var(--line)}
+  #${APP_ID} .pl-person .icon {font-size:20px}
+  #${APP_ID} .pl-person strong {display:block;font-size:12px;margin:5px 0}
+  #${APP_ID} .pl-person small {font-size:10px;color:#6b7063}
+  #${APP_ID} .pl-action-grid {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+  #${APP_ID} .pl-action {border:2px solid var(--ink);background:#f8efd9;padding:11px 6px;
+    text-align:center;min-width:0}
+  #${APP_ID} .pl-action:hover:not(:disabled) {background:#e4edda}
+  #${APP_ID} .pl-action:disabled {opacity:.4;cursor:not-allowed}
+  #${APP_ID} .pl-action .icon {font-size:20px;display:block;margin-bottom:7px}
+  #${APP_ID} .pl-action strong {font-size:11px;display:block}
+  #${APP_ID} .pl-action small {display:block;font-size:10px;margin-top:5px;color:#727466}
+  #${APP_ID} .pl-journal-entry {padding:10px 0;border-bottom:1px dashed var(--line);
+    font-size:12px;line-height:1.6}
+  #${APP_ID} .pl-journal-entry:last-child {border-bottom:0}
+  #${APP_ID} .pl-journal-entry strong {display:block;margin-bottom:4px}
+  #${APP_ID} .pl-notice {position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    z-index:10005;background:var(--ink);color:white;padding:12px 18px;
+    border:2px solid white;box-shadow:4px 4px 0 rgba(0,0,0,.2);
+    max-width:90vw;font-size:12px;display:none}
+  #${APP_ID} .pl-modal-backdrop {position:fixed;inset:0;background:rgba(37,42,34,.65);
+    z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px}
+  #${APP_ID} .pl-modal {background:var(--paper);border:3px solid var(--ink);
+    box-shadow:7px 7px 0 rgba(0,0,0,.25);width:min(700px,100%);max-height:85vh;
+    overflow:auto;padding:22px}
+  #${APP_ID} .pl-modal-head {display:flex;justify-content:space-between;gap:12px;
+    align-items:flex-start}
+  #${APP_ID} .pl-modal p,#${APP_ID} .pl-modal li {font-size:13px;line-height:1.8}
+  #${APP_ID} .pl-modal ul {padding-left:20px}
+  #${APP_ID} .pl-form {display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #${APP_ID} .pl-field {display:flex;flex-direction:column;gap:7px}
+  #${APP_ID} .pl-field label {font-size:12px;font-weight:bold}
+  #${APP_ID} .pl-field input,#${APP_ID} .pl-field select {
+    width:100%;padding:11px;border:2px solid #a99d85;background:#fffdf5;color:var(--ink)}
+  #${APP_ID} .pl-full {grid-column:1/-1}
+  #${APP_ID} .pl-start {max-width:780px;margin:6vh auto}
+  #${APP_ID} .pl-start-hero {background:#c4d9c0;border:3px solid var(--ink);
+    padding:24px;margin-bottom:18px;position:relative;overflow:hidden}
+  #${APP_ID} .pl-start-hero h1 {font-size:clamp(25px,5vw,44px);line-height:1.1;margin:10px 0}
+  #${APP_ID} .pl-start-hero p {font-family:Georgia,serif;line-height:1.7;margin-bottom:0}
+  #${APP_ID} .pl-ending {text-align:center}
+  #${APP_ID} .pl-ending .memories {text-align:left;background:#f3ead6;
+    border:2px dashed #b5a588;padding:17px;margin:18px 0;line-height:1.8;
+    font-family:Georgia,serif}
+  #${APP_ID} .pl-empty {font-size:12px;color:#7a7a6d;line-height:1.7}
+  #${APP_ID} .pl-guide-button {position:fixed;right:20px;bottom:20px;width:48px;height:48px;
+    border:3px solid var(--ink);background:#f0c59d;box-shadow:4px 4px 0 var(--ink);
+    font-weight:bold;font-size:21px;z-index:9000;border-radius:0}
+  #${APP_ID} .pl-footer {text-align:center;font-size:10px;color:#65735d;margin:20px 0 0}
+  @media(max-width:900px) {
+    #${APP_ID} .pl-layout {grid-template-columns:1fr}
+    #${APP_ID} .pl-side {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+    #${APP_ID} .pl-side > .pl-card:first-child {grid-column:1/-1}
+  }
+  @media(max-width:580px) {
+    #${APP_ID} {padding:11px}
+    #${APP_ID} .pl-card {padding:13px}
+    #${APP_ID} .pl-choices {grid-template-columns:1fr}
+    #${APP_ID} .pl-action-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+    #${APP_ID} .pl-side {display:flex}
+    #${APP_ID} .pl-form {grid-template-columns:1fr}
+    #${APP_ID} .pl-full {grid-column:auto}
+    #${APP_ID} .pl-scene {min-height:235px}
+    #${APP_ID} .pl-story-text {font-size:16px}
+  }
+  @media(prefers-reduced-motion:reduce) {
+    #${APP_ID} * {transition:none!important;scroll-behavior:auto!important}
+  }`;
+
+  const style = document.createElement("style");
+  style.textContent = css;
+  document.head.appendChild(style);
+
+  // Tạo giao diện riêng để mã có thể chạy ngay cả khi phần HTML trước đó
+  // chưa có đủ các vùng hiển thị cần thiết.
+  const root = document.createElement("div");
+  root.id = APP_ID;
+  document.body.appendChild(root);
+
+  function shell() {
+    root.innerHTML = `
+      <div class="pl-shell">
+        <header class="pl-topbar">
+          <div class="pl-brand">PIXEL LIFE <small>DECISION SIMULATOR · MỘT ĐỜI NGƯỜI, NHIỀU LỰA CHỌN</small></div>
+          <div class="pl-top-actions">
+            <button class="pl-btn small" id="pl-save">Lưu cuộc đời</button>
+            <button class="pl-btn small" id="pl-load">Tải bản lưu</button>
+            <button class="pl-btn small" id="pl-journal">Nhật ký</button>
+            <button class="pl-btn small" id="pl-guide-top">Hướng dẫn</button>
+          </div>
+        </header>
+        <main id="pl-content"></main>
+        <footer class="pl-footer">KHÔNG CÓ MỘT CUỘC ĐỜI HOÀN HẢO — CHỈ CÓ NHỮNG LỰA CHỌN VÀ ĐIỀU TA HỌC ĐƯỢC.</footer>
+      </div>
+      <button class="pl-guide-button" id="pl-guide-corner" aria-label="Mở hướng dẫn người mới" title="Hướng dẫn người mới">?</button>
+      <div class="pl-notice" id="pl-notice" role="status" aria-live="polite"></div>
+      <div id="pl-modal-host"></div>
+    `;
+
+    $("#pl-save").addEventListener("click", saveGame);
+    $("#pl-load").addEventListener("click", loadGame);
+    $("#pl-journal").addEventListener("click", openJournal);
+    $("#pl-guide-top").addEventListener("click", openGuide);
+    $("#pl-guide-corner").addEventListener("click", openGuide);
+  }
+
+  function notify(message) {
+    const el = $("#pl-notice");
+    if (!el) return;
+    el.textContent = message;
+    el.style.display = "block";
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { el.style.display = "none"; }, 2600);
+  }
+
+  function safeText(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+    })[ch]);
+  }
+
+  function modal(title, content, options = {}) {
+    const host = $("#pl-modal-host");
+    activeModal = document.createElement("div");
+    activeModal.className = "pl-modal-backdrop";
+    activeModal.innerHTML = `
+      <section class="pl-modal" role="dialog" aria-modal="true" aria-label="${safeText(title)}">
+        <div class="pl-modal-head">
+          <div><div class="pl-eyebrow">${safeText(options.eyebrow || "PIXEL LIFE")}</div>
+          <h2 style="margin-top:8px">${safeText(title)}</h2></div>
+          <button class="pl-btn small" id="pl-modal-close" aria-label="Đóng cửa sổ">ĐÓNG ✕</button>
+        </div>
+        <div>${content}</div>
+      </section>`;
+    host.replaceChildren(activeModal);
+
+    const close = () => {
+      host.innerHTML = "";
+      activeModal = null;
+      document.removeEventListener("keydown", escapeHandler);
+    };
+    const escapeHandler = e => { if (e.key === "Escape") close(); };
+    $("#pl-modal-close", activeModal).addEventListener("click", close);
+    activeModal.addEventListener("click", e => {
+      if (e.target === activeModal) close();
+    });
+    document.addEventListener("keydown", escapeHandler);
+    return { close, element: activeModal };
+  }
+
+  /* -------------------- HƯỚNG DẪN NGƯỜI MỚI -------------------- */
+
+  function openGuide() {
+    modal("Bắt đầu cuộc đời của bạn", `
+      <p>Chào mừng bạn đến với <strong>Pixel Life</strong>. Đây là trò chơi mô phỏng một hành trình sống, từ những năm đầu đời đến tuổi già. Mỗi lựa chọn đều có thể mở ra cơ hội, đồng thời kéo theo những đánh đổi.</p>
+      <h3>01 · Cách chơi</h3>
+      <ul>
+        <li>Đọc tình huống, sau đó chọn một trong các phương án. Mỗi phương án có thể tác động đến những chỉ số khác nhau.</li>
+        <li>Sau khi chọn, hãy đọc phần kết quả trước khi tiếp tục câu chuyện.</li>
+        <li>Ở mỗi chặng, bạn có thể thực hiện tối đa <strong>2 hành động hằng ngày</strong> để chăm sóc bản thân, học tập, kết nối hoặc kiếm tiền.</li>
+        <li>Tiếp tục qua các cột mốc để nhìn lại hành trình và đọc bản tổng kết cuối đời.</li>
+      </ul>
+      <h3>02 · Ý nghĩa các chỉ số</h3>
+      <ul>
+        <li><strong>Sức khỏe:</strong> trạng thái thể chất và khả năng duy trì cuộc sống.</li>
+        <li><strong>Năng lượng:</strong> nguồn lực để học tập, làm việc và tham gia hoạt động.</li>
+        <li><strong>Tinh thần:</strong> mức cân bằng cảm xúc và khả năng hồi phục.</li>
+        <li><strong>Kỹ năng:</strong> năng lực tích lũy qua học tập và trải nghiệm.</li>
+        <li><strong>Tài chính:</strong> nguồn tiền dành cho nhu cầu và cơ hội.</li>
+        <li><strong>Kết nối:</strong> mức độ gắn bó với những người xung quanh.</li>
+      </ul>
+      <h3>03 · Những điều cần nhớ</h3>
+      <ul>
+        <li>Không có phương án nào luôn đúng trong mọi hoàn cảnh. Hãy cân nhắc giá trị, mục tiêu và nguồn lực của nhân vật.</li>
+        <li>Chỉ số cao không tự động đồng nghĩa với một cuộc đời hạnh phúc; mỗi quyết định đều có bối cảnh riêng.</li>
+        <li>Dùng nút <strong>Lưu cuộc đời</strong> để lưu tiến trình trên trình duyệt hiện tại. Nút <strong>Tải bản lưu</strong> sẽ khôi phục dữ liệu đã lưu.</li>
+        <li>Nút <strong>Nhật ký</strong> giúp bạn xem lại các lựa chọn và những điều đã xảy ra.</li>
+      </ul>
+      <div class="pl-outcome"><strong>Mẹo nhỏ:</strong> Đừng chỉ hỏi “Lựa chọn nào đem lại nhiều điểm nhất?”. Hãy thử hỏi “Điều gì quan trọng với nhân vật ở giai đoạn này, và họ sẵn sàng đánh đổi điều gì?”.</div>
+      <div style="margin-top:16px"><button class="pl-btn primary" id="pl-guide-start">Tôi đã hiểu — bắt đầu thôi</button></div>
+    `, { eyebrow: "HƯỚNG DẪN TÂN THỦ" });
+
+    $("#pl-guide-start").addEventListener("click", () => {
+      $("#pl-modal-host").innerHTML = "";
+      activeModal = null;
+      if (!game) renderSetup();
+    });
+  }
+
+  /* -------------------- TẠO NHÂN VẬT -------------------- */
+
+  function renderSetup() {
+    const content = $("#pl-content");
+    content.innerHTML = `
+      <section class="pl-start">
+        <div class="pl-start-hero">
+          <div class="pl-eyebrow">YOUR LIFE, YOUR CHOICES</div>
+          <h1>Một cuộc đời.<br>Nhiều con đường.</h1>
+          <p>Bạn không thể chọn nơi mình bắt đầu, nhưng có thể từng bước quyết định mình sẽ trở thành ai. Hãy tạo nhân vật và bắt đầu hành trình.</p>
+        </div>
+        <section class="pl-card">
+          <h2>Tạo nhân vật</h2>
+          <p class="pl-muted">Những thiết lập ban đầu chỉ tạo nên điểm xuất phát. Chúng không quyết định toàn bộ tương lai của nhân vật.</p>
+          <form id="pl-setup-form" class="pl-form">
+            <div class="pl-field pl-full">
+              <label for="pl-name">Tên nhân vật</label>
+              <input id="pl-name" name="name" maxlength="24" placeholder="Ví dụ: An" required value="An">
+            </div>
+            <div class="pl-field">
+              <label for="pl-gender">Nhân vật</label>
+              <select id="pl-gender" name="gender">
+                <option value="female">Nữ</option>
+                <option value="male">Nam</option>
+                <option value="other">Khác / không xác định</option>
+              </select>
+            </div>
+            <div class="pl-field">
+              <label for="pl-temperament">Tính cách ban đầu</label>
+              <select id="pl-temperament" name="temperament">
+                <option value="balanced">Cân bằng</option>
+                <option value="curious">Tò mò, thích khám phá</option>
+                <option value="careful">Thận trọng, hay suy nghĩ</option>
+                <option value="social">Cởi mở, coi trọng kết nối</option>
+                <option value="ambitious">Tham vọng, hướng mục tiêu</option>
+              </select>
+            </div>
+            <div class="pl-field">
+              <label for="pl-background">Hoàn cảnh gia đình</label>
+              <select id="pl-background" name="background">
+                <option value="ordinary">Gia đình bình thường</option>
+                <option value="supportive">Gia đình hỗ trợ tốt</option>
+                <option value="limited">Nguồn lực hạn chế</option>
+                <option value="strict">Gia đình nhiều kỳ vọng</option>
+              </select>
+            </div>
+            <div class="pl-field">
+              <label for="pl-difficulty">Độ thử thách</label>
+              <select id="pl-difficulty" name="difficulty">
+                <option value="normal">Cân bằng</option>
+                <option value="easy">Nhẹ nhàng</option>
+                <option value="hard">Nhiều thử thách</option>
+              </select>
+            </div>
+            <div class="pl-full" style="margin-top:8px">
+              <button class="pl-btn primary" type="submit">BẮT ĐẦU CUỘC ĐỜI →</button>
+              <button class="pl-btn" type="button" id="pl-setup-guide">Xem hướng dẫn</button>
+            </div>
+          </form>
+        </section>
+      </section>`;
+
+    $("#pl-setup-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const data = Object.fromEntries(form.entries());
+      try {
+        game = createNewGame(data);
+        if (!game.journal) game.journal = [];
+        if (!game.decisions) game.decisions = [];
+        if (!game.flags) game.flags = [];
+        if (!game.milestones) game.milestones = [];
+        if (!game.stats) game.stats = createFallbackStats();
+        game.player = game.player || data;
+        game.currentScene = game.currentScene || "birth";
+        game.dailyActionsUsed = 0;
+        game.waitingForContinue = false;
+        record("Khởi đầu", `Cuộc đời của ${game.player.name || data.name} bắt đầu.`);
+        renderGame();
+        notify("Một hành trình mới bắt đầu!");
+      } catch (err) {
+        console.error(err);
+        notify("Không thể tạo nhân vật. Hãy kiểm tra dữ liệu ở Phần 2.");
+      }
+    });
+
+    $("#pl-setup-guide").addEventListener("click", openGuide);
+  }
+
+  function createFallbackStats() {
+    return { health:70, energy:75, mind:70, skill:10, money:20, relation:30 };
+  }
+
+  /* -------------------- TIỆN ÍCH TRẠNG THÁI -------------------- */
+
+  const STAT_META = {
+    health:  { label:"Sức khỏe", icon:"✚" },
+    energy:  { label:"Năng lượng", icon:"⚡" },
+    mind:    { label:"Tinh thần", icon:"☼" },
+    skill:   { label:"Kỹ năng", icon:"✎" },
+    money:   { label:"Tài chính", icon:"¤" },
+    relation:{ label:"Kết nối", icon:"♡" }
+  };
+
+  function clampNumber(value, min = 0, max = 100) {
+    const n = Number(value);
+    return Math.max(min, Math.min(max, Number.isFinite(n) ? n : 0));
+  }
+
+  function applyStatEffects(effects = {}) {
+    if (!game.stats) game.stats = createFallbackStats();
+    Object.entries(effects || {}).forEach(([key, delta]) => {
+      if (!(key in game.stats)) return;
+      const max = key === "money" ? 999999 : 100;
+      game.stats[key] = clampNumber(Number(game.stats[key]) + Number(delta || 0), 0, max);
+    });
+  }
+
+  function applyPeopleEffects(effects = {}) {
+    if (!game.people) return;
+    Object.entries(effects || {}).forEach(([key, delta]) => {
+      const person = game.people[key];
+      if (!person) return;
+      const old = Number(person.relation || 0);
+      person.relation = clampNumber(old + Number(delta || 0), 0, 100);
+    });
+  }
+
+  function getStage() {
+    return (typeof STAGES !== "undefined" && STAGES[game.currentScene]) || {
+      title:game.currentScene, age:game.currentAge || 0,
+      place:"Một nơi trong ký ức", art:"outdoor", caption:"Một ngày khác của cuộc đời"
+    };
+  }
+
+  function getStory() {
+    return (typeof STORY !== "undefined" && STORY[game.currentScene]) || null;
+  }
+
+  function record(title, text) {
+    if (!game) return;
+    if (!Array.isArray(game.journal)) game.journal = [];
+    game.journal.unshift({
+      day:game.day || 1,
+      age:game.currentAge || 0,
+      title:String(title || "Ghi chép"),
+      text:String(text || ""),
+      time:new Date().toLocaleString("vi-VN")
+    });
+    if (game.journal.length > 100) game.journal.length = 100;
+  }
+
+  function currentAgeLabel() {
+    const age = Math.max(0, Number(game.currentAge || 0));
+    return age === 0 ? "Sơ sinh" : `${age} tuổi`;
+  }
+
+  function getProgress() {
+    const keys = Object.keys(STORY || {});
+    const index = Math.max(0, keys.indexOf(game.currentScene));
+    return Math.round((index / Math.max(1, keys.length - 1)) * 100);
+  }
+
+  function personName(key, person) {
+    if (person && person.name) return person.name;
+    const names = {
+      family:"Gia đình", friend:"Bạn bè", mentor:"Người dẫn đường",
+      partner:"Người đồng hành", community:"Cộng đồng"
+    };
+    return names[key] || key;
+  }
+
+  /* -------------------- VẼ CẢNH PIXEL -------------------- */
+
+  function sceneArt(stage) {
+    const art = stage.art || "outdoor";
+    const building = ["interior","city"].includes(art);
+    const night = art === "night";
+    const skyColor = night ? "#485a7b" : art === "interior" ? "#e8cda6" :
+      art === "city" ? "#c4d6df" : "#b9d8d5";
+    const groundColor = art === "interior" ? "#b38b68" :
+      art === "city" ? "#a8aaa2" : "#d1b58b";
+
+    return `
+      <div class="pl-scene" aria-label="Khung cảnh minh họa bằng pixel">
+        <div class="pl-sky" style="background:${skyColor}"></div>
+        ${night ? `<div style="position:absolute;inset:0;background:
+          radial-gradient(circle at 20% 18%,#fff3c4 0 2px,transparent 3px),
+          radial-gradient(circle at 43% 13%,#fff3c4 0 2px,transparent 3px),
+          radial-gradient(circle at 75% 21%,#fff3c4 0 2px,transparent 3px),
+          radial-gradient(circle at 85% 10%,#fff3c4 0 2px,transparent 3px)"></div>` :
+          `<div class="pl-sun"></div><div class="pl-cloud"></div>`}
+        <div class="pl-hill one" style="background:${building ? "#b4b6a1" : "#8eaf85"}"></div>
+        <div class="pl-hill two" style="background:${building ? "#c4c1a8" : "#9cbf8d"}"></div>
+        <div class="pl-ground" style="background:${groundColor}"></div>
+        ${building ? `
+          <div class="pl-building" style="background:${art === "city" ? "#a7b9c3" : "#f1d7ad"}">
+            <div class="pl-roof" style="background:${art === "city" ? "#778b9b" : "#b66e59"}"></div>
+            <div class="pl-window"></div><div class="pl-door"></div>
+          </div>` : `
+          <div class="pl-tree left"></div><div class="pl-tree right"></div>`}
+        <div class="pl-sprite">
+          <div class="head" style="${game.player.gender === "male" ? "box-shadow:0 -5px #51463b" : "box-shadow:0 -5px #795747"}"></div>
+          <div class="body" style="background:${game.player.gender === "female" ? "#c98478" : game.player.gender === "other" ? "#788db2" : "#67896a"}"></div>
+          <div class="legs"></div>
+        </div>
+        <div class="pl-scene-label">${safeText(stage.title || "Một chặng đường")}</div>
+        <div class="pl-scene-caption">${safeText(stage.caption || stage.place || "Một khoảnh khắc trong đời")}</div>
+      </div>`;
+  }
+
+  /* -------------------- VẼ CHỈ SỐ VÀ NHÂN VẬT -------------------- */
+
+  function renderStats() {
+    const stats = game.stats || createFallbackStats();
+    return Object.entries(STAT_META).map(([key, meta]) => {
+      const value = clampNumber(stats[key] ?? 0, 0, key === "money" ? 999999 : 100);
+      const percent = key === "money" ? Math.min(100, value) : value;
+      return `
+        <div class="pl-stat">
+          <div class="pl-stat-head"><span>${meta.icon} ${meta.label}</span>
+          <strong>${Math.round(value)}${key === "money" ? " xu" : "/100"}</strong></div>
+          <div class="pl-stat-bar"><div class="pl-stat-fill" style="width:${percent}%"></div></div>
+        </div>`;
+    }).join("");
+  }
+
+  function renderPeople() {
+    const people = game.people || {};
+    const entries = Object.entries(people);
+    if (!entries.length) return `<p class="pl-empty">Những mối quan hệ sẽ xuất hiện trong hành trình của bạn.</p>`;
+    return `<div class="pl-people">${entries.map(([key, person]) => {
+      const value = clampNumber(person.relation ?? 30);
+      return `<div class="pl-person">
+        <span class="icon">${safeText(person.icon || "♡")}</span>
+        <strong>${safeText(personName(key, person))}</strong>
+        <small>${value}/100 · ${safeText(person.description || "Một phần trong hành trình")}</small>
+        <div class="pl-progress"><span style="width:${value}%"></span></div>
+      </div>`;
+    }).join("")}</div>`;
+  }
+
+  function renderJournalPreview() {
+    const entries = (game.journal || []).slice(0, 3);
+    if (!entries.length) return `<p class="pl-empty">Những ký ức đầu tiên sẽ được ghi lại ở đây.</p>`;
+    return entries.map(item => `
+      <div class="pl-journal-entry">
+        <strong>${safeText(item.title)} · ${safeText(item.age)} tuổi</strong>
+        ${safeText(item.text)}
+      </div>`).join("");
+  }
+
+  /* -------------------- HÀNH ĐỘNG HẰNG NGÀY -------------------- */
+
+  function renderDailyActions() {
+    const used = Number(game.dailyActionsUsed || 0);
+    const remaining = Math.max(0, (GAME_CONFIG.actionsPerDay || 2) - used);
+    const actions = typeof DAILY !== "undefined" ? DAILY : {};
+
+    let entries = Array.isArray(actions)
+      ? actions.map((item, i) => [item.id || item.key || `action${i}`, item])
+      : Object.entries(actions);
+
+    if (!entries.length) {
+      entries = [
+        ["study",{icon:"✎",title:"Học tập",desc:"Tăng kỹ năng",effects:{skill:4,energy:-8},message:"Bạn dành thời gian học tập."}],
+        ["rest",{icon:"☾",title:"Nghỉ ngơi",desc:"Hồi phục",effects:{health:3,energy:12,mind:4},message:"Bạn cho bản thân thời gian nghỉ ngơi."}],
+        ["connect",{icon:"♡",title:"Kết nối",desc:"Quan tâm người khác",effects:{relation:5,mind:3},message:"Một cuộc trò chuyện khiến ngày hôm nay ấm áp hơn."}],
+        ["work",{icon:"¤",title:"Làm việc",desc:"Kiếm thêm tiền",effects:{money:8,energy:-10},message:"Bạn hoàn thành một công việc nhỏ."}],
+        ["hobby",{icon:"✿",title:"Sở thích",desc:"Làm điều mình thích",effects:{mind:6,energy:-3},message:"Bạn dành thời gian cho điều mình yêu thích."}]
+      ];
+    }
+
+    return `
+      <section class="pl-card" style="margin-top:18px">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+          <div><div class="pl-eyebrow">NHỊP SỐNG THƯỜNG NGÀY</div><h3 style="margin:7px 0">Bạn muốn dành thời gian cho điều gì?</h3></div>
+          <span class="pl-muted">Còn ${remaining} lượt hành động</span>
+        </div>
+        <p class="pl-muted">Mỗi lượt là một sự ưu tiên. Hành động có thể giúp một mặt của cuộc sống tốt hơn nhưng cũng tiêu tốn thời gian hoặc năng lượng.</p>
+        <div class="pl-action-grid">
+          ${entries.map(([key, action]) => `
+            <button class="pl-action" data-daily="${safeText(key)}" ${remaining <= 0 ? "disabled" : ""}>
+              <span class="icon">${safeText(action.icon || "✦")}</span>
+              <strong>${safeText(action.title || action.name || key)}</strong>
+              <small>${safeText(action.desc || action.description || "Dành thời gian")}</small>
+            </button>`).join("")}
+        </div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+          <button class="pl-btn small" id="pl-next-day" ${game.waitingForContinue ? "disabled" : ""}>${remaining === 0 ? "Đã dùng hết lượt" : "Bỏ qua hành động"}</button>
+          <span class="pl-muted" style="align-self:center">Ngày ${game.day || 1} · ${currentAgeLabel()}</span>
+        </div>
+      </section>`;
+  }
+
+  function doDailyAction(key) {
+    if (!game || game.ending) return;
+    const used = Number(game.dailyActionsUsed || 0);
+    const max = GAME_CONFIG.actionsPerDay || 2;
+    if (used >= max) {
+      notify("Bạn đã dùng hết lượt hành động trong ngày.");
+      return;
+    }
+
+    const actions = typeof DAILY !== "undefined" ? DAILY : {};
+    let action = Array.isArray(actions)
+      ? actions.find((item, i) => (item.id || item.key || `action${i}`) === key)
+      : actions[key];
+
+    if (!action) {
+      notify("Không tìm thấy hành động này.");
+      return;
+    }
+
+    applyStatEffects(action.effects || {});
+    applyPeopleEffects(action.people || {});
+    game.dailyActionsUsed = used + 1;
+    const message = action.message || `Bạn đã dành thời gian cho hoạt động: ${action.title || key}.`;
+    record(action.title || "Hành động hằng ngày", message);
+    renderGame();
+    notify(message);
+  }
+
+  function skipDailyActions() {
+    if (!game || game.ending) return;
+    game.day = Number(game.day || 1) + 1;
+    game.dailyActionsUsed = 0;
+    record("Một ngày mới", "Bạn bước sang ngày tiếp theo và tiếp tục hành trình.");
+    renderGame();
+    notify("Ngày mới bắt đầu.");
+  }
+
+  /* -------------------- CHỌN LỰA VÀ TIẾP TỤC -------------------- */
+
+  function choose(index) {
+    if (!game || game.ending) return;
+    if (game.waitingForContinue) {
+      notify("Hãy đọc kết quả và bấm tiếp tục trước khi chọn lần nữa.");
+      return;
+    }
+
+    const story = getStory();
+    if (!story || !Array.isArray(story.choices)) {
+      notify("Cảnh này chưa có dữ liệu lựa chọn.");
+      return;
+    }
+
+    const choice = story.choices[index];
+    if (!choice) return;
+
+    applyStatEffects(choice.effects || {});
+    applyPeopleEffects(choice.people || {});
+
+    if (choice.flag) {
+      if (!Array.isArray(game.flags)) game.flags = [];
+      game.flags.push(choice.flag);
+    }
+
+    const title = choice.title || `Lựa chọn ${index + 1}`;
+    const outcome = choice.outcome || "Lựa chọn này trở thành một phần trong hành trình của bạn.";
+    game.selectedChoice = index;
+    game.lastOutcome = outcome;
+    game.waitingForContinue = true;
+
+    if (!Array.isArray(game.decisions)) game.decisions = [];
+    game.decisions.push({
+      scene:game.currentScene,
+      age:game.currentAge,
+      title,
+      outcome,
+      effects:{...(choice.effects || {})},
+      day:game.day
+    });
+
+    record(title, outcome);
+
+    // Nếu dữ liệu Phần 2 có các mốc quan trọng, ghi nhận chúng.
+    if (typeof MILESTONES !== "undefined" && MILESTONES) {
+      const flag = choice.flag;
+      if (flag && MILESTONES[flag]) {
+        if (!Array.isArray(game.milestones)) game.milestones = [];
+        game.milestones.push(MILESTONES[flag]);
+      }
+    }
+
+    renderGame();
+  }
+
+  function continueStory() {
+    if (!game) return;
+    const story = getStory();
+    if (!story) {
+      finishLife();
+      return;
+    }
+
+    const next = story.next;
+    game.waitingForContinue = false;
+    game.selectedChoice = null;
+    game.lastOutcome = null;
+    game.day = Number(game.day || 1) + 1;
+    game.dailyActionsUsed = 0;
+
+    if (!next || !STORY[next]) {
+      finishLife();
+      return;
+    }
+
+    game.currentScene = next;
+    const nextStory = STORY[next];
+    const nextStage = STAGES[next] || {};
+    game.currentAge = Number(nextStory.age ?? nextStage.age ?? game.currentAge ?? 0);
+    game.sceneIndex = Object.keys(STORY).indexOf(next);
+
+    record("Bước sang chặng mới", `Bạn bước vào giai đoạn: ${nextStory.title || nextStage.title || next}.`);
+    renderGame();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  /* -------------------- GIAO DIỆN CÂU CHUYỆN -------------------- */
+
+  function renderChoices(story) {
+    if (!story || !Array.isArray(story.choices)) {
+      return `<p class="pl-empty">Chưa có dữ liệu cho tình huống này.</p>`;
+    }
+
+    if (game.waitingForContinue) {
+      return `
+        <div class="pl-outcome">
+          <div class="pl-eyebrow">ĐIỀU XẢY RA SAU LỰA CHỌN</div>
+          <p style="margin:8px 0 14px">${safeText(game.lastOutcome || "Bạn đã đưa ra lựa chọn.")}</p>
+          <button class="pl-btn primary" id="pl-continue">TIẾP TỤC HÀNH TRÌNH →</button>
+        </div>`;
+    }
+
+    return `<div class="pl-choices">${story.choices.map((choice, i) => `
+      <button class="pl-choice" data-choice="${i}">
+        <strong><span class="num">${i + 1}</span>${safeText(choice.title || `Phương án ${i + 1}`)}</strong>
+        <small>${safeText(choice.desc || "Hãy cân nhắc trước khi lựa chọn.")}</small>
+      </button>`).join("")}</div>`;
+  }
+
+  function renderGame() {
+    if (!game) {
+      renderSetup();
+      return;
+    }
+
+    if (game.ending) {
+      renderEnding();
+      return;
+    }
+
+    const story = getStory();
+    const stage = getStage();
+    const progress = getProgress();
+    const content = $("#pl-content");
+
+    if (!story) {
+      content.innerHTML = `
+        <section class="pl-card">
+          <h2>Chặng đường này chưa có nội dung</h2>
+          <p class="pl-muted">Hãy kiểm tra tên cảnh trong STORY ở Phần 2.</p>
+          <button class="pl-btn" id="pl-return-setup">Quay lại tạo nhân vật</button>
+        </section>`;
+      $("#pl-return-setup").addEventListener("click", renderSetup);
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="pl-layout">
+        <section class="pl-main">
+          ${sceneArt(stage)}
+          <section class="pl-card pl-story">
+            <div class="pl-eyebrow">CHẶNG ${Math.max(1, Number(game.sceneIndex || 0) + 1)} · ${safeText(currentAgeLabel())}</div>
+            <h2>${safeText(story.title || stage.title || "Một lựa chọn mới")}</h2>
+            <p class="pl-story-text">${safeText(story.text || "Một ngày mới đang mở ra trước mắt bạn.")}</p>
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 10px">
+              <h3 style="margin:0">${game.waitingForContinue ? "Nhìn lại lựa chọn" : "Bạn sẽ làm gì?"}</h3>
+              <span class="pl-muted">${game.waitingForContinue ? "Đã chọn phương án" : `${story.choices.length} phương án`}</span>
+            </div>
+            ${renderChoices(story)}
+          </section>
+          ${renderDailyActions()}
+        </section>
+
+        <aside class="pl-side">
+          <section class="pl-card">
+            <div class="pl-eyebrow">HỒ SƠ NHÂN VẬT</div>
+            <h3 style="margin-top:8px">${safeText(game.player.name || "Nhân vật")}</h3>
+            <p class="pl-muted">${safeText(currentAgeLabel())} · Ngày ${Number(game.day || 1)}</p>
+            <div class="pl-eyebrow">TIẾN TRÌNH CUỘC ĐỜI</div>
+            <div class="pl-progress"><span style="width:${progress}%"></span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px">
+              <span>Bắt đầu</span><strong>${progress}%</strong><span>Tuổi già</span>
+            </div>
+            <div style="margin-top:16px">
+              <div class="pl-eyebrow">CHỈ SỐ HIỆN TẠI</div>
+              ${renderStats()}
+            </div>
+          </section>
+
+          <section class="pl-card">
+            <div class="pl-eyebrow">NHỮNG MỐI QUAN HỆ</div>
+            <h3 style="margin-top:8px">Người đồng hành</h3>
+            ${renderPeople()}
+          </section>
+
+          <section class="pl-card">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+              <div><div class="pl-eyebrow">GHI CHÉP CUỘC ĐỜI</div><h3 style="margin:7px 0 0">Nhật ký gần đây</h3></div>
+              <button class="pl-btn small" id="pl-journal-side">Mở nhật ký</button>
+            </div>
+            <div style="margin-top:10px">${renderJournalPreview()}</div>
+          </section>
+        </aside>
+      </div>`;
+
+    $$("[data-choice]", content).forEach(button => {
+      button.addEventListener("click", () => choose(Number(button.dataset.choice)));
+    });
+
+    $$("[data-daily]", content).forEach(button => {
+      button.addEventListener("click", () => doDailyAction(button.dataset.daily));
+    });
+
+    const continueButton = $("#pl-continue");
+    if (continueButton) continueButton.addEventListener("click", continueStory);
+
+    const nextDayButton = $("#pl-next-day");
+    if (nextDayButton) nextDayButton.addEventListener("click", skipDailyActions);
+
+    const journalButton = $("#pl-journal-side");
+    if (journalButton) journalButton.addEventListener("click", openJournal);
+  }
+
+  /* -------------------- NHẬT KÝ CUỘC ĐỜI -------------------- */
+
+  function openJournal() {
+    if (!game) {
+      modal("Nhật ký cuộc đời", `<p>Bạn cần bắt đầu một cuộc đời trước khi có nhật ký.</p>`);
+      return;
+    }
+
+    const entries = game.journal || [];
+    const decisions = game.decisions || [];
+
+    const journalHTML = entries.length ? entries.map(item => `
+      <div class="pl-journal-entry">
+        <strong>${safeText(item.title)} · ${safeText(item.age)} tuổi · Ngày ${safeText(item.day)}</strong>
+        <div>${safeText(item.text)}</div>
+        <small class="pl-muted">${safeText(item.time || "")}</small>
+      </div>`).join("") : `<p class="pl-empty">Nhật ký còn trống. Những quyết định tiếp theo sẽ được ghi lại tại đây.</p>`;
+
+    const decisionsHTML = decisions.length ? decisions.map((item, i) => `
+      <div class="pl-journal-entry">
+        <strong>${i + 1}. ${safeText(item.title)} · ${safeText(item.age)} tuổi</strong>
+        <div>${safeText(item.outcome)}</div>
+      </div>`).join("") : `<p class="pl-empty">Bạn chưa đưa ra lựa chọn nào.</p>`;
+
+    modal("Nhật ký cuộc đời", `
+      <p class="pl-muted">Nhật ký không chỉ ghi lại điều đã xảy ra, mà còn giúp bạn quan sát những ưu tiên của mình thay đổi ra sao theo thời gian.</p>
+      <h3>Những ghi chép gần đây</h3>
+      ${journalHTML}
+      <hr style="border:0;border-top:2px dashed #d8cbb1;margin:22px 0">
+      <h3>Các quyết định đã đưa ra</h3>
+      ${decisionsHTML}
+      <div style="margin-top:16px">
+        <button class="pl-btn" id="pl-export-journal">Xuất nhật ký dạng TXT</button>
+      </div>
+    `, { eyebrow:"KÝ ỨC ĐƯỢC LƯU LẠI" });
+
+    $("#pl-export-journal").addEventListener("click", exportJournal);
+  }
+
+  function exportJournal() {
+    if (!game) return;
+    const lines = [
+      `PIXEL LIFE — NHẬT KÝ CUỘC ĐỜI`,
+      `Nhân vật: ${game.player.name}`,
+      `Tuổi hiện tại: ${game.currentAge}`,
+      "",
+      "=== NHẬT KÝ ===",
+      ...(game.journal || []).map(item =>
+        `[${item.age} tuổi | Ngày ${item.day}] ${item.title}\n${item.text}\n`
+      ),
+      "",
+      "=== CÁC QUYẾT ĐỊNH ===",
+      ...(game.decisions || []).map((item, i) =>
+        `${i + 1}. [${item.age} tuổi] ${item.title}\n${item.outcome}\n`
+      )
+    ];
+
+    const blob = new Blob([lines.join("\n")], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pixel-life-${(game.player.name || "nhan-vat").replace(/[^\p{L}\p{N}-]/gu, "-")}-nhat-ky.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /* -------------------- LƯU VÀ TẢI GAME -------------------- */
+
+  function saveGame() {
+    if (!game) {
+      notify("Bạn chưa bắt đầu cuộc đời nào để lưu.");
+      return;
+    }
+
+    try {
+      game.lastSavedAt = new Date().toISOString();
+      localStorage.setItem(GAME_CONFIG.saveKey || "pixelLifeDecisionSimulator_v2", JSON.stringify(game));
+      notify("Đã lưu cuộc đời trên trình duyệt này.");
+    } catch (err) {
+      console.error(err);
+      notify("Không thể lưu. Trình duyệt có thể đang chặn bộ nhớ cục bộ.");
+    }
+  }
+
+  function loadGame() {
+    const key = (typeof GAME_CONFIG !== "undefined" && GAME_CONFIG.saveKey)
+      || "pixelLifeDecisionSimulator_v2";
+
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        modal("Chưa có bản lưu", `
+          <p>Trình duyệt này chưa có bản lưu Pixel Life.</p>
+          <p class="pl-muted">Bản lưu chỉ nằm trong trình duyệt hiện tại. Nếu bạn đổi thiết bị hoặc xóa dữ liệu trình duyệt, bản lưu có thể không còn.</p>
+        `);
+        return;
+      }
+
+      const saved = JSON.parse(raw);
+      if (!saved || typeof saved !== "object" || !saved.player || !saved.stats) {
+        throw new Error("Invalid save data");
+      }
+
+      game = saved;
+      game.journal = Array.isArray(game.journal) ? game.journal : [];
+      game.decisions = Array.isArray(game.decisions) ? game.decisions : [];
+      game.flags = Array.isArray(game.flags) ? game.flags : [];
+      game.milestones = Array.isArray(game.milestones) ? game.milestones : [];
+      game.people = game.people || {};
+      game.dailyActionsUsed = Number(game.dailyActionsUsed || 0);
+      game.waitingForContinue = Boolean(game.waitingForContinue);
+      renderGame();
+      notify("Đã tải bản lưu thành công.");
+    } catch (err) {
+      console.error(err);
+      modal("Không đọc được bản lưu", `
+        <p>Dữ liệu lưu không đúng định dạng hoặc đã bị lỗi.</p>
+        <p class="pl-muted">Bạn có thể bắt đầu một cuộc đời mới. Việc này không tự động xóa bản lưu cũ.</p>
+      `);
+    }
+  }
+
+  /* -------------------- KẾT THÚC CUỘC ĐỜI -------------------- */
+
+  function finishLife() {
+    if (!game) return;
+
+    game.ending = true;
+    const stats = game.stats || {};
+    const decisions = game.decisions || [];
+    const journal = game.journal || [];
+    const name = game.player.name || "Nhân vật";
+
+    const strongest = Object.entries(STAT_META)
+      .map(([key, meta]) => ({key, label:meta.label, value:Number(stats[key] || 0)}))
+      .sort((a, b) => b.value - a.value)[0];
+
+    const lowest = Object.entries(STAT_META)
+      .map(([key, meta]) => ({key, label:meta.label, value:Number(stats[key] || 0)}))
+      .sort((a, b) => a.value - b.value)[0];
+
+    const highlights = decisions.slice(-5).map(item =>
+      `<li><strong>${safeText(item.age)} tuổi — ${safeText(item.title)}:</strong> ${safeText(item.outcome)}</li>`
+    ).join("");
+
+    const reflections = [
+      `Trong hành trình của mình, ${name} đã đưa ra ${decisions.length} quyết định được ghi lại.`,
+      strongest ? `Nguồn lực nổi bật nhất ở thời điểm kết thúc là ${strongest.label}.` : "",
+      lowest ? `${lowest.label} là phương diện cần được quan tâm nhiều hơn khi nhìn lại những lựa chọn đã qua.` : "",
+      `Một cuộc đời không thể được đo bằng một chỉ số duy nhất. Những điều đã đánh đổi, những người đã gặp và những trải nghiệm đã có đều góp phần tạo nên hành trình này.`
+    ].filter(Boolean);
+
+    game.endingSummary = {
+      decisions:decisions.length,
+      journalEntries:journal.length,
+      strongest:strongest?.label || "",
+      lowest:lowest?.label || "",
+      reflections
+    };
+
+    record("Khép lại hành trình", `${name} đã đi đến chặng cuối của cuộc đời. Đây là lúc nhìn lại những quyết định, mối quan hệ và điều đã học được.`);
+    renderEnding({highlights, reflections});
+  }
+
+  function renderEnding(prepared = null) {
+    if (!game) return;
+    const stats = game.stats || {};
+    const name = game.player.name || "Nhân vật";
+    const decisions = game.decisions || [];
+    const reflections = prepared?.reflections || game.endingSummary?.reflections || [
+      `${name} đã đi qua nhiều chặng đường và đưa ra những lựa chọn không thể hoàn toàn giống bất kỳ ai khác.`,
+      "Có quyết định mở ra cơ hội, có quyết định để lại điều tiếc nuối. Nhưng mỗi trải nghiệm đều có thể trở thành một phần của sự trưởng thành."
+    ];
+    const highlights = prepared?.highlights || decisions.slice(-5).map(item =>
+      `<li><strong>${safeText(item.age)} tuổi — ${safeText(item.title)}:</strong> ${safeText(item.outcome)}</li>`
+    ).join("");
+
+    $("#pl-content").innerHTML = `
+      <section class="pl-card pl-ending">
+        <div class="pl-eyebrow">THE END · MỘT HÀNH TRÌNH KHÉP LẠI</div>
+        <div style="font-size:48px;margin:18px 0">✦</div>
+        <h2>Cuốn hồi ký của ${safeText(name)}</h2>
+        <p class="pl-muted">Không phải câu chuyện hoàn hảo. Là câu chuyện của những gì đã chọn, đã giữ lại và đã học được.</p>
+        <div class="memories">
+          ${reflections.map(text => `<p>${safeText(text)}</p>`).join("")}
+          <h3>Những trang đáng nhớ</h3>
+          <ul>${highlights || "<li>Những quyết định của nhân vật chưa được ghi lại.</li>"}</ul>
+        </div>
+        <h3>Nhìn lại những gì đã tích lũy</h3>
+        <div class="pl-layout" style="grid-template-columns:repeat(3,minmax(0,1fr));text-align:left">
+          ${Object.entries(STAT_META).map(([key, meta]) => `
+            <div class="pl-person">
+              <strong>${meta.icon} ${meta.label}</strong>
+              <div style="font-size:22px;margin-top:8px">${Math.round(Number(stats[key] || 0))}${key === "money" ? " xu" : "/100"}</div>
+            </div>`).join("")}
+        </div>
+        <p style="margin-top:18px">Bạn đã ghi lại <strong>${decisions.length}</strong> quyết định và <strong>${(game.journal || []).length}</strong> dòng nhật ký.</p>
+        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px">
+          <button class="pl-btn" id="pl-ending-journal">Đọc lại nhật ký</button>
+          <button class="pl-btn" id="pl-ending-save">Lưu hồi ký</button>
+          <button class="pl-btn primary" id="pl-new-life">BẮT ĐẦU CUỘC ĐỜI MỚI ↻</button>
+        </div>
+      </section>`;
+
+    $("#pl-ending-journal").addEventListener("click", openJournal);
+    $("#pl-ending-save").addEventListener("click", exportJournal);
+    $("#pl-new-life").addEventListener("click", newLife);
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function newLife() {
+    if (!confirm("Bắt đầu cuộc đời mới? Hãy chắc chắn rằng bạn đã lưu hoặc xuất nhật ký nếu muốn giữ hành trình hiện tại.")) {
+      return;
+    }
+    game = null;
+    renderSetup();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  /* -------------------- KHỞI ĐỘNG -------------------- */
+
+  shell();
+  renderSetup();
+
+  // Tự động mở hướng dẫn lần đầu, nhưng không bắt buộc người chơi phải đọc.
+  const guideSeenKey = "pixelLifeGuideSeen_v1";
+  try {
+    if (!localStorage.getItem(guideSeenKey)) {
+      openGuide();
+      localStorage.setItem(guideSeenKey, "yes");
+    }
+  } catch (_) {
+    // Nếu trình duyệt chặn localStorage, nút hướng dẫn vẫn hoạt động.
+  }
+
+})();
+</script>
+</body>
+</html>
