@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Simulator - Nền Tảng Mô Phỏng Giải Pháp Thực Tế</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151c2c',
+                            900: '#0f172a',
+                            950: '#090d16',
+                        },
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .module-card { transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+        .module-card:hover { transform: translateY(-4px); border-color: rgba(14,165,233,.45); background: rgba(30,41,59,.85); }
+        .flipbook-frame { width: 100%; height: min(78vh, 900px); min-height: 480px; border: 0; border-radius: 14px; background: #fff; }
+        @media (max-width: 640px) { .flipbook-frame { height: 72vh; min-height: 400px; } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="app.goHome()">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white text-xl font-bold">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold bg-gradient-to-r from-white via-slate-200 to-brand-400 bg-clip-text text-transparent">Decision Simulator</h1>
+                    <p class="text-xs text-slate-400 font-medium">Nền Tảng Mô Phỏng Giải Pháp Thực Tế</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-3">
+                <button onclick="app.openStatsModal()" class="px-4 py-2.5 rounded-xl glass-card hover:bg-slate-800 text-sm font-semibold transition flex items-center space-x-2 border border-slate-700/50">
+                    <i class="fa-solid fa-chart-line text-brand-400"></i>
+                    <span class="hidden sm:inline">Thống Kê</span>
+                </button>
+                <button onclick="app.openAiChat()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-sm font-semibold text-white shadow-lg shadow-brand-600/30 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>Trợ Lý AI Tư Vấn</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- View 1: Home / Categories List -->
+        <div id="home-view" class="space-y-8 animate-fade-in">
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl glass-panel p-8 sm:p-12 border border-slate-800 shadow-2xl">
+                <div class="absolute -right-10 -bottom-10 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-10 -top-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="relative z-10 max-w-2xl space-y-4">
+                    <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>34 Kịch Bản Thực Tế &bull; 8 Lĩnh Vực Chuyên Sâu</span>
+                    </span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+                        Nâng Cao Năng Lực Ra Quyết Định Chiến Lược
+                    </h2>
+                    <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                        Trải nghiệm các tình huống khủng hoảng, quản lý, khởi nghiệp và đời sống. Mỗi lựa chọn của bạn sẽ định hình kết quả qua 5 tầng mô phỏng thực tế.
+                    </p>
+                    <div class="pt-2 flex flex-wrap gap-4">
+                        <button onclick="app.scrollToCategories()" class="px-6 py-3 rounded-xl bg-white text-slate-950 font-bold hover:bg-slate-200 transition shadow-lg flex items-center space-x-2">
+                            <span>Khám Phá Danh Mục</span>
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Four core project modules -->
+            <section id="project-modules" class="space-y-5">
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Hệ thống giải pháp ra quyết định</h3>
+                    <p class="text-sm text-slate-400 mt-1">Bốn mô-đun liên kết từ nhận diện khó khăn đến thực hành và tự nhìn lại.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                    <button onclick="app.scrollToCategories()" class="module-card glass-card rounded-2xl p-6 text-left border border-slate-700/60">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/15 text-blue-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-route"></i></div>
+                        <h4 class="font-bold text-white text-lg">01. Mô phỏng tình huống thực tế</h4>
+                        <p class="text-sm text-slate-400 mt-2">Thực hành lựa chọn qua các tình huống và xem xét hệ quả của từng phương án.</p>
+                        <span class="inline-flex items-center gap-2 text-sm text-sky-300 mt-5 font-semibold">Bắt đầu mô phỏng <i class="fa-solid fa-arrow-right"></i></span>
+                    </button>
+                    <button type="button" onclick="window.open('https://heyzine.com/flip-book/f018c810dc.html','_blank','noopener,noreferrer')" class="module-card glass-card rounded-2xl p-6 text-left border border-slate-700/60">
+                        <div class="w-12 h-12 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-book-open"></i></div>
+                        <h4 class="font-bold text-white text-lg">02. Cẩm nang ra quyết định</h4>
+                        <p class="text-sm text-slate-400 mt-2">Không gian dành cho kiến thức nền tảng và các phương pháp rèn luyện kỹ năng ra quyết định.</p>
+                        <span class="inline-flex items-center gap-2 text-sm text-sky-300 mt-5 font-semibold">Mở cẩm nang <i class="fa-solid fa-arrow-right"></i></span>
+                    </button>
+                    <button onclick="window.open('https://heyzine.com/flip-book/7557070249.html','_blank','noopener,noreferrer')" class="module-card glass-card rounded-2xl p-6 text-left border border-slate-700/60">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-book-bookmark"></i></div>
+                        <h4 class="font-bold text-white text-lg">03. Nhật ký ra quyết định</h4>
+                        <p class="text-sm text-slate-400 mt-2">Xem hướng dẫn ghi lại vấn đề, phương án, lựa chọn và kết quả.</p>
+                        <span class="inline-flex items-center gap-2 text-sm text-sky-300 mt-5 font-semibold">Mở nhật ký <i class="fa-solid fa-arrow-right"></i></span>
+                    </button>
+                    <button onclick="window.open('https://heyzine.com/flip-book/e21b32a4de.html','_blank','noopener,noreferrer')" class="module-card glass-card rounded-2xl p-6 text-left border border-slate-700/60">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-clipboard-check"></i></div>
+                        <h4 class="font-bold text-white text-lg">04. Bộ công cụ tự đánh giá</h4>
+                        <p class="text-sm text-slate-400 mt-2">Đọc tài liệu hỗ trợ và bộ công cụ tự đánh giá mức độ tê liệt phân tích.</p>
+                        <span class="inline-flex items-center gap-2 text-sm text-sky-300 mt-4 font-semibold">Mở bộ công cụ <i class="fa-solid fa-arrow-right"></i></span>
+                        <div class="mt-4 pt-4 border-t border-slate-700/70">
+                            <span role="button" tabindex="0" onclick="event.stopPropagation(); window.open('https://heyzine.com/flip-book/f018c810dc.html','_blank','noopener,noreferrer')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();window.open('https://heyzine.com/flip-book/f018c810dc.html','_blank','noopener,noreferrer')}" class="text-sm text-violet-300 hover:text-violet-200 font-semibold text-left cursor-pointer">Đọc tài liệu sách lật liên quan <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                        </div>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500">Lưu ý: các nút mở tài liệu sẽ chuyển trực tiếp đến sách lật trên Heyzine ở tab mới. Phần tự đánh giá trực tuyến có chấm điểm và diễn giải kết quả cần được tích hợp riêng nếu muốn làm bài ngay trên website.</p>
+            </section>
+
+            <!-- Embedded flipbook reader -->
+            <section id="project-book-view" class="hidden space-y-4 animate-fade-in">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <button onclick="app.closeProjectBook()" class="p-3 rounded-xl glass-card hover:bg-slate-800 text-slate-300" aria-label="Quay lại trang chủ"><i class="fa-solid fa-arrow-left"></i></button>
+                        <div><h3 id="project-book-title" class="text-xl sm:text-2xl font-bold text-white">Tài liệu</h3><p class="text-sm text-slate-400">Sách lật được nhúng trực tiếp từ Heyzine</p></div>
+                    </div>
+                    <a id="project-book-external" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold"><i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>Mở ở Heyzine</a>
+                </div>
+                <div class="glass-panel p-2 sm:p-3 rounded-2xl"><iframe id="project-book-frame" class="flipbook-frame" title="Sách lật dự án" loading="eager" allow="autoplay; fullscreen; clipboard-write" allowfullscreen scrolling="no" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+            </section>
+
+            <!-- Categories Grid Section -->
+            <div id="categories-section" class="space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">8 Thể Loại Mô Phỏng</h3>
+                        <p class="text-sm text-slate-400">Chọn lĩnh vực bạn muốn thử thách tư duy giải quyết vấn đề</p>
+                    </div>
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="app.handleSearch(this.value)" placeholder="Tìm cốt truyện hoặc thể loại..." class="w-full pl-11 pr-4 py-2.5 rounded-xl glass-card text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition">
+                    </div>
+                </div>
+
+                <div id="categories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Dynamically injected categories -->
+                </div>
+            </div>
+        </div>
+
+        <!-- View 2: Scenario List in Category -->
+        <div id="scenarios-view" class="hidden space-y-6 animate-fade-in">
+            <div class="flex items-center space-x-4">
+                <button onclick="app.goHome()" class="p-3 rounded-xl glass-card hover:bg-slate-800 text-slate-300 transition">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 id="category-title" class="text-2xl sm:text-3xl font-extrabold text-white"></h2>
+                    <p id="category-desc" class="text-sm text-slate-400"></p>
+                </div>
+            </div>
+
+            <div id="scenarios-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically injected scenarios -->
+            </div>
+        </div>
+
+        <!-- View 3: Simulation Active Play (5 Tiers) -->
+        <div id="simulation-view" class="hidden space-y-6 animate-fade-in max-w-4xl mx-auto">
+            <!-- Simulation Header / Progress -->
+            <div class="glass-panel p-6 rounded-3xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <button onclick="app.backToScenarios()" class="text-sm font-semibold text-slate-400 hover:text-white flex items-center space-x-2 transition">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Thoát Mô Phỏng</span>
+                    </button>
+                    <div id="tier-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                        Tầng 1 / 5
+                    </div>
+                </div>
+
+                <div>
+                    <h2 id="sim-scenario-title" class="text-2xl sm:text-3xl font-extrabold text-white mb-2"></h2>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div id="sim-progress-bar" class="bg-gradient-to-r from-brand-600 to-indigo-600 h-full w-1/5 transition-all duration-500"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario Situation Card -->
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 text-slate-800/40 text-7xl font-black pointer-events-none" id="sim-tier-number">
+                    01
+                </div>
+                
+                <div class="space-y-3 relative z-10">
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-400">Tình huống thực tế</span>
+                    <p id="sim-situation-text" class="text-lg sm:text-xl text-slate-200 leading-relaxed font-medium"></p>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-slate-800 relative z-10">
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Lựa chọn giải pháp của bạn:</h4>
+                    <div id="sim-choices-container" class="space-y-3">
+                        <!-- Dynamically injected choices -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Feedback Box (Hidden initially) -->
+            <div id="sim-feedback-box" class="hidden glass-panel p-6 sm:p-8 rounded-3xl border-l-4 space-y-4 animate-fade-in">
+                <div class="flex items-center space-x-3">
+                    <div id="feedback-icon" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"></div>
+                    <div>
+                        <h4 id="feedback-title" class="text-lg font-bold text-white"></h4>
+                        <span id="feedback-score-badge" class="text-xs font-semibold"></span>
+                    </div>
+                </div>
+                <p id="feedback-desc" class="text-slate-300 leading-relaxed"></p>
+                <div class="pt-2 flex justify-end">
+                    <button onclick="app.nextTier()" id="next-tier-btn" class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition flex items-center space-x-2 shadow-lg shadow-brand-600/30">
+                        <span id="next-tier-btn-text">Tiếp tục Tầng tiếp theo</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 4: Simulation Summary / Report -->
+        <div id="report-view" class="hidden space-y-6 animate-fade-in max-w-3xl mx-auto">
+            <div class="glass-panel p-8 sm:p-10 rounded-3xl text-center space-y-6 relative overflow-hidden">
+                <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-brand-600 to-indigo-600 mx-auto flex items-center justify-center text-3xl text-white shadow-xl shadow-brand-600/30">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-xs font-bold uppercase tracking-widest text-brand-400">Hoàn Thành Mô Phỏng</span>
+                    <h2 class="text-3xl font-extrabold text-white" id="report-scenario-name"></h2>
+                    <p class="text-slate-400 text-sm">Bạn đã vượt qua toàn bộ 5 tầng quyết định của cốt truyện này.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 max-w-md mx-auto py-4">
+                    <div class="glass-card p-4 rounded-2xl">
+                        <span class="text-xs text-slate-400 block mb-1">Tổng Điểm Đạt Được</span>
+                        <span id="report-total-score" class="text-3xl font-black text-brand-400">0</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl">
+                        <span class="text-xs text-slate-400 block mb-1">Đánh Giá Năng Lực</span>
+                        <span id="report-rating" class="text-xl font-bold text-emerald-400">Xuất Sắc</span>
+                    </div>
+                </div>
+
+                <p id="report-feedback-summary" class="text-slate-300 text-sm sm:text-base leading-relaxed bg-slate-900/50 p-4 rounded-2xl border border-slate-800"></p>
+
+                <div class="flex flex-wrap justify-center gap-4 pt-4">
+                    <button onclick="app.restartCurrentScenario()" class="px-6 py-3 rounded-xl glass-card hover:bg-slate-800 font-semibold text-white transition flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Thử Lại Cốt Truyện</span>
+                    </button>
+                    <button onclick="app.goHome()" class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 font-bold text-white transition flex items-center space-x-2 shadow-lg shadow-brand-600/30">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Về Trang Chủ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="ai-chat-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade-in">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl border border-slate-800 shadow-2xl flex flex-col h-[600px] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Trợ Lý AI Tư Vấn Quyết Định</h3>
+                        <p class="text-xs text-slate-400">Hỏi đáp chiến lược, phân tích tình huống cùng chuyên gia AI</p>
+                    </div>
+                </div>
+                <button onclick="app.closeAiChat()" class="w-9 h-9 rounded-xl glass-card hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Chat Messages Container -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-xs shrink-0">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-sm text-slate-200 max-w-[80%] leading-relaxed">
+                        Xin chào! Tôi là trợ lý AI chuyên gia phân tích quyết định. Bạn cần tư vấn về vấn đề kinh doanh, quản trị khủng hoảng, tài chính hay tình huống cá nhân nào không?
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Form -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900/40">
+                <form onsubmit="app.sendAiMessage(event)" class="flex items-center space-x-3">
+                    <input type="text" id="chat-input" placeholder="Nhập câu hỏi hoặc tình huống bạn đang gặp phải..." class="flex-1 bg-slate-900/80 border border-slate-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition">
+                    <button type="submit" class="px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition shadow-lg shadow-brand-600/30 flex items-center justify-center">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade-in">
+        <div class="glass-panel w-full max-w-md rounded-3xl border border-slate-800 shadow-2xl p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-line text-brand-400"></i>
+                    <span>Thống Kê Hoạt Động</span>
+                </h3>
+                <button onclick="app.closeStatsModal()" class="w-8 h-8 rounded-xl glass-card hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <span class="text-xs text-slate-400 block">Số Cốt Truyện Đã Chơi</span>
+                    <span id="stat-completed-count" class="text-2xl font-black text-brand-400">0</span>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                    <span class="text-xs text-slate-400 block">Điểm Trung Bình</span>
+                    <span id="stat-avg-score" class="text-2xl font-black text-emerald-400">0</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h4 class="text-sm font-bold text-slate-300">Thành Tích Đã Đạt</h4>
+                <div id="badges-container" class="space-y-2">
+                    <!-- Badges injected -->
+                </div>
+            </div>
+
+            <button onclick="app.closeStatsModal()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-white transition">
+                Đóng
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const fullDatabase = [
+            {
+                category: "THỂ LOẠI 1: TRƯỞNG THÀNH & HƯỚNG NGHIỆP",
+                stories: [
+                    {
+                        id: "t1_s1", title: "Bàn Ăn Tối Chủ Nhật", role: "Đứa con trong gia đình", desc: "Đối mặt với áp lực chọn ngành nghề theo truyền thống gia đình hay tự do cá nhân.",
+                        stages: [
+                            { title: "Tầng 1: Khơi mào kỳ vọng", text: "Trong bữa cơm tối Chủ nhật, ba đặt sẵn tờ brochure ngành Kinh tế lên bàn và mặc định bạn sẽ nối nghiệp gia đình. Bạn đang thích nghệ thuật.", choices: ["Thẳng thắn bày tỏ mong muốn theo đuổi nghệ thuật ngay tại bàn ăn.", "Im lặng gật đầu qua loa để giữ hòa khí trước mắt.", "Đề xuất giải pháp học kinh tế bổ trợ kết hợp tự do sáng tạo."] },
+                            { title: "Tầng 2: Sức ép từ người thân", text: "Ba viện dẫn những tấm gương bạn bè thành đạt nhờ kinh doanh, ngầm ám chỉ đam mê của bạn là viển vông.", choices: ["Đưa ra dẫn chứng thực tế về thu nhập ngành sáng tạo số.", "Cúi gặm cơm, sự tủi thân dâng trào nhưng chọn cách im lặng.", "Đề nghị cho thời gian 6 tháng tự chứng minh năng lực qua dự án thực tế."] },
+{ title: "Tầng 3: Điểm gãy cảm xúc", text: "Mẹ thở dài nói ba mẹ vất vả cả đời chỉ vì muốn tương lai con nhàn hạ. Ánh mắt thất vọng của mẹ khiến bạn day dứt.", choices: ["Chạy về phòng đóng sầm cửa lại vì cảm thấy ngột ngạt.", "Nén cảm xúc, nắm lấy tay mẹ hứa sẽ chịu trách nhiệm cuộc đời mình.", "Đồng ý nộp hồ sơ thử một nguyện vọng theo ý gia đình."] },
+                            { title: "Tầng 4: Ngưỡng cửa quyết định", text: "Hạn chót đăng ký nguyện vọng chỉ còn 24 giờ. Ba mẹ giục bạn ký tên vào hồ sơ trường Kinh tế.", choices: ["Kiên quyết gạch tên ngành cũ, tự điền nguyện vọng yêu thích vào phút chót.", "Ký vào hồ sơ nhưng nung nấu ý định tự lập tài chính khi lên đại học.", "Tạm hoãn, gọi điện xin lời khuyên từ giáo viên chủ nhiệm."] },
+                            { title: "Tầng 5: Kết cục trưởng thành", text: "Bằng sự chủ động và trung thực, bạn đã bước đầu làm chủ được tiến trình ra quyết định của bản thân. Không có lựa chọn hoàn hảo 100%, chỉ có lựa chọn bạn đủ bản lĩnh chịu trách nhiệm.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t1_s2", title: "Ngã Rẽ Bạn Bè", role: "Học sinh cấp 3", desc: "Khi mỗi người bạn thân rẽ sang một hướng, tìm ra hướng đi thực sự cho chính mình.",
+                        stages: [
+                            { title: "Tầng 1: Buổi hẹn quán quen", text: "Nhóm bạn thân 4 người ngồi bên ly trà sữa cuối cấp. Đứa vào chuyên, đứa học nghề, đứa đi du học.", choices: ["Hoang mang, định đăng ký theo đứa giỏi nhất nhóm.", "Bình tĩnh nhìn nhận lại năng lực thực tế bản thân.", "Âm thầm quyết định tự tìm lối đi riêng không dựa dẫm."] },
+                            { title: "Tầng 2: Khoảng cách vô hình", text: "Thời gian trôi qua, mỗi đứa một ngã rẽ thành công riêng. Bạn vẫn đang vật lộn với luyện thi.", choices: ["Cảm giác tự ti nảy sinh, hạn chế lướt mạng xã hội.", "Chủ động hỏi thăm công việc của đứa học nghề để học hỏi.", "Tự nhủ mỗi người có đồng hồ sinh học riêng và tập trung mục tiêu."] },
+                            { title: "Tầng 3: Lời rủ rê lệch hướng", text: "Bạn cũ rủ bỏ học thêm đi chơi điện tử giải tỏa áp lực học tập.", choices: ["Thẳng thắn từ chối vì kỳ thi đã cận kề.", "Nhận lời đi cùng vì quá mệt mỏi muốn giải tỏa.", "Tìm lý do từ chối khéo để giữ khoảng cách an toàn."] },
+{ title: "Tầng 4: Phút ngã ngũ", text: "Nhóm bạn cũ lục đục, bạn bị lôi vào cuộc cãi vã chung trong nhóm chat.", choices: ["Đứng ra hòa giải kết nối lại tình bạn.", "Lặng lẽ tắt thông báo nhóm chat, chấp nhận buông bỏ.", "Bênh vực người bị oan, chấp nhận mất lòng số đông."] },
+                            { title: "Tầng 5: Định hình bản sắc", text: "Bạn tìm ra hướng đi chủ động và tôn trọng. Đồng hành cùng chính mình mới là quan trọng nhất.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t1_s3", title: "Áp Lực Ngành 'Hot'", role: "Người trẻ trước cửa ĐH", desc: "Chạy theo xu hướng xã hội hay chọn ngành ít người hiểu nhưng đúng sở trường.",
+                        stages: [
+                            { title: "Tầng 1: Cơn sốt tuyển sinh", text: "Mạng xã hội ngập tràn thông tin về ngành 'hot' điểm chuẩn cao ngất ngưởng. Bạn dao động dù thích ngành kỹ thuật.", choices: ["Chạy theo xu hướng đăng ký ngành hot để dễ xin việc.", "Kiên định chọn ngành đúng sở trường dù ít người hiểu.", "Đăng ký kết hợp cả hai nguyện vọng để thăm dò."] },
+                            { title: "Tầng 2: Sức ép điểm số", text: "Điểm thi thử dao động mạnh khiến việc với tới ngành hot trở nên mong manh.", choices: ["Cố gắng cày ngày đêm bất chấp sức khỏe suy giảm.", "Điều chỉnh nguyện vọng về mức an toàn phù hợp thực tế.", "Tìm kiếm học bổng và xét tuyển kết hợp phương thức khác."] },
+                            { title: "Tầng 3: Lời khuyên trái chiều", text: "Người đi trước cảnh báo ngành hot có nguy cơ bão hòa nhân lực khi ra trường.", choices: ["Lắng nghe, chuyển hướng sang chuyên môn ngách vững chắc.", "Bất chấp cảnh báo, tin vào sức hút của thương hiệu ngành.", "Tự mình nghiên cứu báo cáo thị trường việc làm 5 năm tới."] },
+                            { title: "Tầng 4: Quyết định cuối cùng", text: "Đứng trước cổng trường nộp hồ sơ xét tuyển chính thức.", choices: ["Quyết định chọn ngành sở trường để đi đường dài.", "Đánh cược vào ngành hot theo số đông xã hội.", "Chọn ngành giao thoa giữa xu hướng và năng lực cá nhân."] },
+                            { title: "Tầng 5: Trái ngọt thực tế", text: "Thành công không đến từ việc chọn ngành hot nhất, mà đến từ việc bạn làm giỏi nhất.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+id: "t1_s4", title: "Bản Đồ Vô Định", role: "Học sinh mất định hướng", desc: "Hành trình từ sự mù mịt đến khi tự vẽ ra lộ trình tương lai của bản thân.",
+                        stages: [
+                            { title: "Tầng 1: Sự mù mịt ban đầu", text: "Bạn bè ai cũng có mục tiêu rõ ràng, riêng bạn nhìn đâu cũng thấy mơ hồ, trống rỗng.", choices: ["Hoảng loạn vì nghĩ mình kém cỏi hơn người khác.", "Bắt đầu ghi ra những việc mình không ghét làm lên giấy.", "Phó mặc cho hoàn cảnh đưa đẩy đến đâu hay đến đó."] },
+                            { title: "Tầng 2: Thử nghiệm rải rác", text: "Tham gia vài buổi hướng nghiệp nhưng vẫn không tìm thấy ngọn lửa đam mê.", choices: ["Thử tự học một kỹ năng mới (thiết kế/lập trình) xem sao.", "Chán nản bỏ cuộc, tiếp tục ngồi ì trong vùng an toàn.", "Đăng ký làm tình nguyện viên để trải nghiệm thực tế xã hội."] },
+                            { title: "Tầng 3: Phát hiện đốm lửa", text: "Trong một dự án nhỏ ở trường, bạn nhận ra mình rất có năng lực tổ chức và điều phối.", choices: ["Đào sâu phát triển thế mạnh quản lý vừa phát hiện.", "Xem đó là may mắn tình cờ rồi bỏ quên qua một bên.", "Nhờ thầy cô đánh giá khách quan về năng lực tổ chức."] },
+                            { title: "Tầng 4: Vẽ lại bản đồ", text: "Lập lộ trình 3 năm tới dựa trên những trải nghiệm thực tế đã qua.", choices: ["Xây dựng kế hoạch chi tiết từng mốc thời gian cụ thể.", "Lên kế hoạch chung chung để đỡ bị áp lực tâm lý.", "Tìm một người cố vấn dẫn dắt định hướng chuyên sâu."] },
+                            { title: "Tầng 5: Làm chủ lộ trình", text: "Sự mù mịt tan biến khi bạn tự tay vẽ nên bản đồ tương lai bằng hành động nhỏ mỗi ngày.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t1_s5", title: "Gánh Nặng Người Đi Trước", role: "Đứa con mang bóng anh/chị", desc: "Phải sống và chọn con đường bù đắp sự kỳ vọng sau thất bại của người đi trước.",
+                        stages: [
+                            { title: "Tầng 1: Cái bóng quá lớn", text: "Thầy cô và gia đình luôn so sánh bạn với người anh/chị từng là thủ khoa trường nhưng đã bỏ dở giữa chừng.", choices: ["Nổi loạn, cố tình làm trái ý để thoát khỏi cái bóng đó.", "Chấp nhận gánh vác kỳ vọng, nén tôi cá nhân xuống.", "Tuyên bố rõ ràng mình là cá thể độc lập không phải bản sao."] },
+{ title: "Tầng 2: Áp lực vô hình", text: "Mỗi bước đi của bạn đều bị săm soi xem có lặp lại vết xe đổ của người đi trước không.", choices: ["Tìm gặp anh/chị để trò chuyện thấu hiểu nguyên nhân.", "Tự cô lập bản thân để tránh mọi sự phán xét xung quanh.", "Tập trung tuyệt đối vào thành tích để chứng minh bản lĩnh."] },
+                            { title: "Tầng 3: Giọt nước tràn ly", text: "Bị so sánh trực diện trong một cuộc họp gia đình khiến bạn bùng nổ cảm xúc.", choices: ["Rời khỏi bữa ăn, thể hiện rõ sự tổn thương sâu sắc.", "Cãi tay đôi bảo vệ danh dự cá nhân đến cùng.", "Im lặng lạnh lùng chứng minh bằng kết quả thực tế sau đó."] },
+                            { title: "Tầng 4: Sống cuộc đời mình", text: "Nhận ra việc sống vì kỳ vọng của người khác là cái bẫy tiêu diệt bản ngã.", choices: ["Dứt khoát chọn con đường hoàn toàn khác anh/chị.", "Tiếp tục đi con đường cũ nhưng với tâm thế hoàn toàn mới.", "Yêu cầu gia đình tôn trọng quyền tự quyết của bản thân."] },
+                            { title: "Tầng 5: Giải phóng bản thân", text: "Bạn đã buông bỏ được gánh nặng không thuộc về mình để hiên ngang bước đi trên đôi chân.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 2: TÂM LÝ HỌC ĐƯỜNG & ĐỜI SỐNG GEN Z",
+                stories: [
+                    {
+                        id: "t2_s1", title: "Chiếc Đồng Hồ 2 Giờ Sáng", role: "Học sinh chuyên/luyện thi", desc: "5 tầng lựa chọn đối mặt với chứng mất ngủ và hội chứng sợ thua kém bạn bè.",
+                        stages: [
+                            { title: "Tầng 1: Ánh đèn bàn độc lập", text: "Đồng hồ điểm 2 giờ sáng. Đèn bàn vẫn sáng rực. Bạn nhìn đống đề cương chưa xong trong khi mắt hoa lên.", choices: ["Uống cà phê đặc, ép bản thân thức tiếp.", "Gấp sách đi ngủ để bảo vệ sức khỏe.", "Chợp mắt 3 tiếng rồi dậy học tiếp."] },
+                            { title: "Tầng 2: Bóng ma so sánh", text: "Sáng hôm sau nghe bạn cùng bàn khoe thức đến 4h sáng giải xong 3 đề nâng cao.", choices: ["Hoảng loạn, tự trách mình lười biếng.", "Giữ vững nhịp độ học tập khoa học riêng.", "Kiểm tra lại phương pháp học tập."] },
+{ title: "Tầng 3: Cơn hoảng loạn bất chợt", text: "Trong giờ kiểm tra thử, tim đập dồn dập, tay run lẩy bẩy, chữ nghĩa bay sạch.", choices: ["Nhắm mắt hít thở sâu lấy lại bình tĩnh.", "Cố viết bừa ra giấy nháp xả áp lực.", "Buông bút vài phút chấp nhận quá tải."] },
+                            { title: "Tầng 4: Lời cảnh tỉnh", text: "Cơ thể báo động đỏ: Bạn bị chóng mặt ngất xỉu nhẹ tại hành lang trường học.", choices: ["Xin nghỉ ngơi hoàn toàn 1 ngày hồi phục.", "Vừa truyền dịch vừa cầm sách đọc tiếp.", "Nói chuyện thẳng thắn với phụ huynh."] },
+                            { title: "Tầng 5: Sự cân bằng mới", text: "Sức khỏe tinh thần là nền tảng của mọi thành công. Bạn đã tìm ra nhịp học bền vững.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t2_s2", title: "Tin Nhắn Chưa Được Hồi Đáp", role: "Thành viên bị cô lập", desc: "Vượt qua khủng hoảng khi phát hiện mình đứng ngoài lề các mối quan hệ lớp học.",
+                        stages: [
+                            { title: "Tầng 1: Phát hiện nhóm kín", text: "Vô tình thấy nhóm bạn thân lập group chat riêng không có mặt mình, nói những lời xa cách.", choices: ["Trực tiếp nhắn tin hỏi rõ nguyên nhân sự việc.", "Tự dằn vặt, thu mình lại trong im lặng.", "Lờ đi, tìm kiếm những người bạn mới hợp hơn."] },
+                            { title: "Tầng 2: Sự lạnh nhạt", text: "Đến lớp cảm nhận rõ rệt sự xa cách, không ai rủ đi ăn hay thảo luận bài tập chung.", choices: ["Chủ động bắt chuyện phá băng sự ngượng ngùng.", "Chấp nhận đi một mình, tỏ ra bất cần.", "Tâm sự với giáo viên chủ nhiệm tìm trợ giúp."] },
+                            { title: "Tầng 3: Giọt nước tràn ly", text: "Bị phân công làm bài tập nhóm một mình vì không ai nhận chung đội.", choices: ["Tự hoàn thành xuất sắc dự án cá nhân độc lập.", "Nhờ sự hỗ trợ từ các bạn lớp bên cạnh.", "Nói chuyện với lớp trưởng về sự bất công này."] },
+                            { title: "Tầng 4: Tự chủ bản thân", text: "Nhận ra giá trị bản thân không phụ thuộc vào sự chấp thuận của một nhóm người.", choices: ["Tập trung phát triển năng lực cá nhân rực rỡ.", "Mở rộng mối quan hệ sang các câu lạc bộ ngoài trường.", "Tha thứ và giữ khoảng cách lịch sự với nhóm cũ."] },
+                            { title: "Tầng 5: Vượt qua cô lập", text: "Bạn đã đứng vững trên đôi chân của mình và thu hút những người bạn chân thành thực sự.", isResult: true, choices: [] }
+]
+                    },
+                    {
+                        id: "t2_s3", title: "Bảng Điểm Giữa Kỳ", role: "Đứa con sợ hãi ánh mắt phụ huynh", desc: "Xử lý khủng hoảng tâm lý khi nhận kết quả học tập sụt giảm bất ngờ.",
+                        stages: [
+                            { title: "Tầng 1: Tờ giấy điểm số", text: "Nhận bài kiểm tra giữa kỳ với điểm số thấp chưa từng thấy, tay bạn run lên.", choices: ["Tìm cách giấu nhẹm tờ bài kiểm tra đi.", "Chủ động đối mặt, phân tích lỗi sai ngay.", "Khóc nức nở vì sợ ánh mắt thất vọng của bố mẹ."] },
+                            { title: "Tầng 2: Khoảnh khắc thú nhận", text: "Buổi tối, bố mẹ gọi lên phòng hỏi tình hình học tập và bảng điểm giữa kỳ.", choices: ["Thành thật nhận lỗi và trình bày nguyên nhân sụt giảm.", "Nói dối điểm chưa phát để kéo dài thời gian.", "Đổ lỗi do đề thi quá khó và giáo viên chấm khắt khe."] },
+                            { title: "Tầng 3: Sóng gió gia đình", text: "Bố mẹ tức giận tịch thu điện thoại và cắt giảm mọi hoạt động vui chơi.", choices: ["Im lặng chịu phạt, âm thầm cày kéo lại điểm số.", "Cãi lại cho rằng bố mẹ không hiểu áp lực của mình.", "Viết tâm thư cam kết kèm kế hoạch cải thiện điểm."] },
+                            { title: "Tầng 4: Lội ngược dòng", text: "Lập thời gian biểu sát sao, tập trung bù đắp các lỗ hổng kiến thức.", choices: ["Học nhóm cùng bạn bè tiến bộ mỗi ngày.", "Tự học cường độ cao không nghỉ ngơi.", "Thuê gia sư kèm riêng cấp tốc."] },
+                            { title: "Tầng 5: Lấy lại niềm tin", text: "Điểm số cuối kỳ đã tăng vọt. Bố mẹ ôm bạn tự hào. Bài học lớn về sự trung thực và nỗ lực.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t2_s4", title: "Áp Lực Vị Trí Dẫn Đầu", role: "Học sinh gồng mình giữ danh hiệu", desc: "Hành trình đối diện với chiếc mặt nạ hoàn hảo và nguy cơ sụp đổ tinh thần.",
+                        stages: [
+                            { title: "Tầng 1: Chiếc mặt nạ hoàn hảo", text: "Ai cũng kỳ vọng bạn phải luôn nhất trường. Bạn không cho phép mình được phép sai sót dù chỉ 0.2 điểm.", choices: ["Gồng mình học ngày đêm giữ vững ngai vàng.", "Bắt đầu cảm thấy ngộp thở dưới áp lực danh hiệu.", "Tìm cách né tránh các cuộc thi lớn để giảm tải."] },
+{ title: "Tầng 2: Rạn nứt bên trong", text: "Bắt đầu xuất hiện triệu chứng rụng tóc, đau dạ dày vì căng thẳng thần kinh.", choices: ["Phớt lờ tín hiệu cơ thể, uống thuốc giảm đau học tiếp.", "Tâm sự thật với mẹ về chiếc mặt nạ hoàn hảo.", "Tạm gác lại vài cuộc thi để cân bằng sức khỏe."] },
+                            { title: "Tầng 3: Vấp ngã đầu tiên", text: "Trong kỳ thi học sinh giỏi, bạn trượt giải nhất và chỉ đứng thứ ba.", choices: ["Suy sụp tinh thần, nhốt mình trong phòng khóc.", "Chấp nhận sự thật rằng không ai hoàn hảo mãi mãi.", "Đổ lỗi cho giám khảo chấm thi bất công."] },
+                            { title: "Tầng 4: Tháo bỏ mặt nạ", text: "Dám công khai thừa nhận sự mệt mỏi và không hoàn hảo của bản thân trước lớp.", choices: ["Cảm giác nhẹ nhõm bất ngờ khi được sống thật.", "Lo lắng bị mọi người đánh giá kém đi.", "Nhận được sự đồng cảm và yêu quý chân thành hơn."] },
+                            { title: "Tầng 5: Sống là chính mình", text: "Hạnh phúc không nằm ở vị trí số một, mà nằm ở sự bình yên trong tâm hồn.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t2_s5", title: "Buổi Sáng Mất Động Lực", role: "Người trẻ trải qua trạng thái Burnout", desc: "5 tầng lựa chọn vượt qua sự chán nản vô hình để tìm lại năng lượng sống.",
+                        stages: [
+                            { title: "Tầng 1: Sáng thứ Hai trống rỗng", text: "Thức dậy với cảm giác trống rỗng, nhìn trần nhà và không muốn nhấc chân bước đến trường.", choices: ["Cố lết dậy đi học trong trạng thái vô hồn.", "Xin nghỉ học một buổi vì kiệt sức trầm trọng.", "Lướt điện thoại cả ngày trốn tránh thực tại."] },
+                            { title: "Tầng 2: Chạm đáy năng lượng", text: "Mọi sở thích cũ (đọc sách, nghe nhạc) bỗng trở nên vô vị, nhạt nhẽo.", choices: ["Chấp nhận trạng thái tồi tệ, cho phép mình nghỉ ngơi.", "Tự trách bản thân lười biếng, vô dụng.", "Tìm kiếm sự giúp đỡ từ chuyên gia tâm lý học đường."] },
+                            { title: "Tầng 3: Bước chân ra thiên nhiên", text: "Rời khỏi căn phòng ngột ngạt, đi dạo dưới công viên cây xanh buổi sáng.", choices: ["Hít thở không khí trong lành, quan sát cuộc sống.", "Vừa đi vừa ôm điện thoại suy nghĩ tiêu cực.", "Ngồi thụp xuống khóc để xả hết năng lượng xấu."] },
+{ title: "Tầng 4: Thắp lại đốm lửa nhỏ", text: "Bắt đầu làm một việc cực kỳ nhỏ: dọn dẹp bàn học gọn gàng sạch sẽ.", choices: ["Cảm giác thành công nhỏ giúp tinh thần khấm khá hơn.", "Vẫn thấy mọi thứ vô nghĩa như cũ.", "Viết nhật ký xả bỏ những suy nghĩ hỗn độn."] },
+                            { title: "Tầng 5: Hồi sinh năng lượng", text: "Burnout không đáng sợ, đó là lúc cơ thể buộc bạn phải dừng lại để yêu thương bản thân đúng cách.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 3: ĐẠO ĐỨC XÃ HỘI & VÙNG XÁM",
+                stories: [
+                    {
+                        id: "t3_s1", title: "Khoảng Lặng Ở Góc Sân Trường", role: "Người đứng ngoài cuộc", desc: "Lựa chọn giữa im lặng an toàn hay dũng cảm lên tiếng bảo vệ bạn bị cô lập.",
+                        stages: [
+                            { title: "Tầng 1: Cảnh tượng góc khuất", text: "Thấy nhóm học sinh nổi tiếng đang cố tình trêu chọc, giấu đồ của bạn học mới.", choices: ["Bước đến can ngăn, yêu cầu dừng trò đùa lại.", "Lén đi báo giáo viên chủ nhiệm xử lý.", "Im lặng quay đi để bảo vệ sự an toàn bản thân."] },
+                            { title: "Tầng 2: Ánh mắt cầu cứu", text: "Bạn học mới nhìn bạn với ánh mắt rưng rưng cầu cứu nhưng không dám nói gì.", choices: ["Lại gần kéo bạn ấy rời khỏi đám đông.", "Nháy mắt ra hiệu động viên từ xa.", "Cúi mặt né tránh ánh mắt vì sợ vạ lây."] },
+                            { title: "Tầng 3: Lời đe dọa ngầm", text: "Nhóm bắt nạt liếc nhìn bạn, ám chỉ 'đừng có mà nhiều chuyện tọc mạch'.", choices: ["Hiên ngang nhìn thẳng không sợ hãi.", "Cảm thấy chùn bước, quyết định im lặng từ nay.", "Hẹn gặp riêng người cầm đầu cảnh cáo."] },
+                            { title: "Tầng 4: Quyết định lên tiếng", text: "Đứng trước hội đồng kỷ luật trường khi nhà trường điều tra vụ việc.", choices: ["Dũng cảm làm nhân chứng kể lại toàn bộ sự thật.", "Nói không biết gì để tránh rắc rối cá nhân.", "Chỉ khai mập mờ qua loa cho xong chuyện."] },
+                            { title: "Tầng 5: Lương tâm thanh thản", text: "Sự tử tế và dũng cảm bao giờ cũng giữ cho bạn một tâm hồn trong sáng, đáng tự hào.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+id: "t3_s2", title: "Âm Thanh Trong Giờ Kiểm Tra", role: "Bạn thân của người cầu cứu", desc: "Kẹt giữa nguyên tắc đạo đức và tình bạn qua 5 vòng quyết định căng thẳng.",
+                        stages: [
+                            { title: "Tầng 1: Tờ giấy note cầu cứu", text: "Trong giờ kiểm tra quan trọng, đứa bạn thân ngồi cạnh đẩy tờ giấy note xin đáp án.", choices: ["Chuyền đáp án cho bạn vì sợ mất tình bạn.", "Úp bài lại từ chối quyết liệt nguyên tắc.", "Ra hiệu bảo bạn tự làm đi."] },
+                            { title: "Tầng 2: Ánh mắt giận dỗi", text: "Ra về, bạn thân giận dỗi trách móc bạn ích kỷ, thấy chết mà không cứu.", choices: ["Nhẫn nhịn xin lỗi, giải thích nguyên tắc thi cử.", "Nổi giận mắng lại bạn vì đặt điều kiện sai trái.", "Mua quà chuộc lỗi nhưng giữ vững lập trường."] },
+                            { title: "Tầng 3: Nguy cơ đổ vỡ", text: "Tình bạn đứng trước bờ vực rạn nứt sâu sắc chỉ vì một lần không cho chép bài.", choices: ["Chủ động rủ bạn cùng học nhóm ôn bài cho kỳ sau.", "Mặc kệ, ai sống cuộc đời nấy.", "Nhờ người khác làm cầu nối giảng hòa."] },
+                            { title: "Tầng 4: Bài học tình bạn", text: "Bạn thân nhận ra sai lầm, chủ động nhắn tin xin lỗi vì đã đặt áp lực sai chỗ.", choices: ["Vui vẻ đón nhận, tình bạn trở lại gắn kết.", "Tha thứ nhưng giữ khoảng cách nhất định.", "Cần thêm thời gian để hàn gắn niềm tin."] },
+                            { title: "Tầng 5: Nguyên tắc và tình cảm", text: "Tình bạn chân chính là cùng nhau tiến bộ chứ không phải bao che sai phạm cho nhau.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t3_s3", title: "Ý Tưởng Bị Đánh Cắp", role: "Tác giả ẩn danh trong dự án nhóm", desc: "Xử lý khi thành viên khác nhận hết công lao sức lao động của mình.",
+                        stages: [
+                            { title: "Tầng 1: Buổi thuyết trình oan ức", text: "Trưởng nhóm ôm trọn ý tưởng sáng tạo độc đáo của bạn trình bày trước lớp và nhận hết công.", choices: ["Đứng lên cắt lời đính chính ngay trước lớp.", "Ngồi cắn môi nhẫn nhịn vì sợ mất lòng.", "Lén nhìn trưởng nhóm với ánh mắt bất mãn."] },
+                            { title: "Tầng 2: Bằng chứng trong tay", text: "Bạn có đầy đủ file nháp lịch sử chỉnh sửa chứng minh mình là tác giả.", choices: ["Gặp riêng giáo viên bộ môn trình bày sự thật.", "Đăng bài vạch trần lên group lớp.", "Chọn cách im lặng coi như bố thí."] },
+{ title: "Tầng 3: Lời ngụy biện", text: "Trưởng nhóm cười xòa bảo 'tớ tưởng cậu đồng ý cho tớ đại diện trình bày'.", choices: ["Vạch trần lời nói dối bằng file lịch sử.", "Nói 'lần sau đừng làm thế' rồi bỏ đi.", "Yêu cầu xin lỗi công khai trước nhóm."] },
+                            { title: "Tầng 4: Quyền lợi được trả", text: "Giáo viên xác nhận sự thật và cộng điểm đúng công sức cho bạn.", choices: ["Cảm thấy thỏa mãn vì công sức được đền đáp.", "Rút kinh nghiệm không bao giờ làm việc nhóm lỏng lẻo.", "Từ chối tham gia nhóm đó ở các dự án sau."] },
+                            { title: "Tầng 5: Bảo vệ trí tuệ", text: "Chất xám và mồ hôi của mình phải được tôn trọng và bảo vệ đúng mức.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t3_s4", title: "Bao Che Hay Thành Thật", role: "Đứa con/học sinh đối mặt với lỗi lầm", desc: "Đứng trước ranh giới che giấu sai phạm nhỏ hay chấp nhận chịu phạt để trưởng thành.",
+                        stages: [
+                          { title: "Tầng 1: Vết xước trên xe", text: "Lỡ tay làm xước móp xe của bố khi tập lái, bạn hoảng loạn tìm cách che giấu.", choices: ["Lấy sơn xịt che tạm vết xước, im lặng.", "Thành thật thú nhận ngay với bố.", "Đổ thừa do người khác va quẹt vào lúc đỗ xe."] },
+                          { title: "Tầng 2: Sự im lặng nặng nề", text: "Bố phát hiện vết xước và gặng hỏi ai làm, không khí gia đình vô cùng căng thẳng.", choices: ["Tiếp tục chối bay biến để thoát tội.", "Đứng lên nhận trách nhiệm xin lỗi bố.", "Đổ lỗi cho anh/chị trong nhà."] },
+                          { title: "Tầng 3: Sự thật phơi bày", text: "Camera an ninh nhà hàng xóm đã ghi lại trọn vẹn sự việc lúc bạn lỡ tay.", choices: ["Xấu hổ vô cùng, cúi đầu nhận phạt.", "Bao biện rằng mình đã định nói sau.", "Bỏ chạy khỏi nhà vì quá áp lực."] },
+                          { title: "Tầng 4: Bài học trung thực", text: "Bố phạt nhốt phòng nhưng nhẹ nhàng giảng giải về tính trung thực quan trọng hơn cái xe.", choices: ["Sám hối sâu sắc, rút ra bài học xương máu.", "Vẫn thấy bố quá khắt khe chuyện nhỏ nhặt.", "Hứa sẽ tự kiếm tiền phụ sơn lại xe đền bố."] },
+                          { title: "Tầng 5: Giá trị sự thật", text: "Sai lầm không đáng sợ bằng cách chúng ta đối diện và chịu trách nhiệm với nó.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+id: "t3_s5", title: "Sự Im Lặng Đồng Lõi", role: "Nhân chứng tin đồn", desc: "5 tầng đấu tranh nội tâm khi biết rõ sự thật nhưng sợ bị vạ lây.",
+                        stages: [
+                          { title: "Tầng 1: Tin đồn độc hại", text: "Nghe nhóm bạn thêu dệt và lan truyền một tin đồn sai sự thật về bạn học khác.", choices: ["Hùa theo cười cợt cho vui chuyện.", "Im lặng không nói gì vì sợ bị ghét.", "Lên tiếng đính chính bảo vệ người bịa đặt."] },
+                          { title: "Tầng 2: Hậu quả lan rộng", text: "Nạn nhân của tin đồn khóc sướt mướt muốn bỏ học vì áp lực.", choices: ["Cảm thấy cắn rứt lương tâm tột độ.", "Tự nhủ không phải việc của mình nên mặc kệ.", "Lén nhắn tin khuyên nhủ nạn nhân."] },
+                          { title: "Tầng 3: Đứng trước lựa chọn", text: "Giáo viên gọi bạn lên hỏi có nghe thấy tin đồn đó ai nói đầu tiên không.", choices: ["Khai thật toàn bộ sự thật để giải oan.", "Nói em không biết gì để bảo vệ bạn bè.", "Chỉ nói lấp lửng nửa vời."] },
+                          { title: "Tầng 4: Sự giằng xé", text: "Sự hèn nhát im lặng đồng lõi khiến bạn ăn không ngon ngủ không yên suốt mấy đêm.", choices: ["Viết thư nặc danh hoặc nhắn tin thú nhận.", "Tự tha lỗi cho bản thân qua thời gian.", "Đến gặp nạn nhân trực tiếp xin lỗi."] },
+                          { title: "Tầng 5: Sức mạnh sự thật", text: "Im lặng trước cái ác đôi khi chính là đồng lõa. Dũng cảm nói lên sự thật là biểu hiện của nhân cách lớn.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 4: THẾ GIỚI ẢO & KHỦNG HOẢNG KỸ THUẬT SỐ",
+                stories: [
+                    {
+                        id: "t4_s1", title: "Bản Thân Ở Phiên Bản 2.0", role: "Người trẻ so sánh mạng", desc: "5 tầng thoát khỏi cái bẫy tự ti trước cuộc sống rực rỡ giả định trên mạng.",
+                        stages: [
+                          { title: "Tầng 1: Cạm bẫy bảng tin", text: "Lướt mạng xã hội thấy bạn đồng trang tuổi check-in sang chảnh, tự ti trào dâng.", choices: ["Đăng ảnh ảo tạo vỏ bọc hoàn hảo giống họ.", "Khóa app detox mạng xã hội ngay lập tức.", "Tiếp tục lướt xem trong sự ghen tị ngầm."] },
+{ title: "Tầng 2: Vỏ bọc ảo giác", text: "Cảm giác cô đơn bủa vây dù xung quanh hàng ngàn lượt tương tác ảo.", choices: ["Tổ chức gặp mặt bạn bè ngoài đời thực.", "Nghiện ảo hóa, sống chết vì lượng tim.", "Tạm khóa tài khoản vài ngày suy ngẫm."] },
+                          { title: "Tầng 3: Tỉnh thức", text: "Nhận ra đằng sau khung hình hào nhoáng là những áp lực giấu kín của họ.", choices: ["Chấp nhận phiên bản thực tế bình dị của mình.", "Vẫn cố chấp so sánh và tự dằn vặt bản thân.", "Học cách trân trọng những điều nhỏ bé thật."] },
+                          { title: "Tầng 4: Xây dựng đời thực", text: "Dồn năng lượng vào việc đọc sách, học tập và thể thao ngoài trời.", choices: ["Cảm giác sống thật tràn đầy năng lượng.", "Thỉnh thoảng vẫn bị cám dỗ quay lại mạng.", "Cai nghiện điện thoại thành công mỹ mãn."] },
+                          { title: "Tầng 5: Giá trị thực tại", text: "Cuộc sống thực không có bộ lọc (filter) chỉnh sửa, nhưng nó có cảm xúc thật và sự bình yên.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t4_s2", title: "Làn Sóng Ẩn Danh", role: "Thành viên suýt hùa theo tẩy chay mạng", desc: "Hành trình nhận ra sự thật đằng sau những phán xét vô tình trên không gian mạng.",
+                        stages: [
+                          { title: "Tầng 1: Bình luận ác ý", text: "Thấy cư dân mạng đang hùa nhau chỉ trích, ném đá một người qua đoạn video cắt ghép.", choices: ["A dua viết vài câu bình luận chê bai theo số đông.", "Đọc qua rồi bỏ qua không quan tâm.", "Tìm hiểu kỹ nguồn gốc video trước khi phán xét."] },
+                          { title: "Tầng 2: Sức mạnh đám đông", text: "Làn sóng tấn công ngày càng khủng khiếp, nạn nhân khóa toàn bộ trang cá nhân.", choices: ["Cảm thấy thỏa mãn vì 'dạy cho họ bài học'.", "Bắt đầu chột dạ trước sức công phá của mạng.", "Tham gia report tài khoản nạn nhân."] },
+                          { title: "Tầng 3: Sự thật đằng sau", text: "Báo chí đưa tin đoạn video hoàn toàn bị cắt ghép ác ý, nạn nhân bị oan ức lớn.", choices: ["Chết lặng, hối hận vì mình là kẻ tát nước theo mưa.", "Bơ đi coi như không có chuyện gì xảy ra.", "Lên tiếng đính chính và xin lỗi nạn nhân."] },
+{ title: "Tầng 4: Vết sẹo không gian ảo", text: "Bài học đắt giá về sự tàn nhẫn của bàn phím ẩn danh.", choices: ["Tự hứa không bao giờ hùa theo tẩy chay ai nữa.", "Tiếp tục quên nhanh để lướt drama mới.", "Làm tuyên truyền viên chống bạo mạng."] },
+                          { title: "Tầng 5: Trách nhiệm lời nói", text: "Lời nói gió bay nhưng sát thương để lại là thật. Hãy uốn lưỡi trước khi gõ phím.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t4_s3", title: "Cạm Bẫy So Sánh", role: "Người bị chi phối bởi lượt tương tác", desc: "5 tầng lựa chọn tìm lại giá trị thực thay vì sống bằng ánh hào quang ảo.",
+                        stages: [
+                          { title: "Tầng 1: Nghiện lượt tương tác", text: "Đăng bức ảnh lên và liên tục F5 xem được bao nhiêu tim, bao nhiêu bình luận.", choices: ["Hủy bài đăng vì ít tim quá, cảm giác quê độ.", "Ngồi đếm từng lượt tương tác trong lo lắng.", "Đi tương tác dạo chéo để kéo tim về."] },
+                          { title: "Tầng 2: Hụt hẫng cảm xúc", text: "Một bài đăng tâm huyết bỗng flop (ít tương tác), tâm trạng bạn tụt dốc thê thảm.", choices: ["Trầm cảm nhẹ, nghĩ mình kém cỏi hết thời.", "Xóa app vài ngày để bình ổn tâm lý.", "Tự nhủ lượt tim không quyết định giá trị con người."] },
+                          { title: "Tầng 3: Cai nghiện ánh hào quang", text: "Bật chế độ ẩn số lượt thích (like) trên trang cá nhân của mình.", choices: ["Cảm giác nhẹ bẫng, bớt hẳn áp lực sống ảo.", "Vẫn thấy thiếu thiếu, thèm cảm giác được tung hô.", "Tập trung sáng tạo vì đam mê thực sự."] },
+                          { title: "Tầng 4: Sống cho mình", text: "Đăng tải những khoảnh khắc đời thường không cần kịch bản hay filter.", choices: ["Tận hưởng sự tự do tuyệt đối trong thế giới ảo.", "Vẫn loay hoay tìm kiếm sự công nhận.", "Khóa hẳn mạng xã hội tập trung ôn thi."] },
+                          { title: "Tầng 5: Ánh sáng nội tại", text: "Hào quang rực rỡ nhất là khi bạn tự tỏa sáng từ năng lực cốt lõi bên trong mình.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t4_s4", title: "Nút 'Hủy Kết Bạn'", role: "Người chịu đựng năng lượng độc hại online", desc: "Quyết định cắt đứt mối quan hệ độc hại trên không gian mạng qua 5 vòng đấu tranh.",
+                        stages: [
+{ title: "Tầng 1: Năng lượng toxic", text: "Người bạn online liên tục đăng status than thở, cà khịa và truyền năng lượng tiêu cực.", choices: ["Vẫn kiên nhẫn đọc và an ủi mỗi ngày.", "Cảm thấy mệt mỏi, muốn ấn nút hủy kết bạn.", "Bật chế độ ẩn bảng tin của họ."] },
+                          { title: "Tầng 2: Giọt nước tràn ly", text: "Họ đăng bài bóng gió châm chọc trực tiếp những quan điểm cá nhân của bạn.", choices: ["Vào cãi nhau tay đôi trên không gian mạng.", "Bình thản ấn nút hủy kết bạn và chặn luôn.", "Nhắn tin riêng hỏi cho ra lẽ."] },
+                          { title: "Tầng 3: Cảm giác nhẹ nhõm", text: "Danh sách bạn bè sạch bóng những kẻ độc hại, bảng tin trở nên trong lành.", choices: ["Tận hưởng không gian mạng văn minh, tích cực.", "Đôi khi thấy trống vắng thiếu drama.", "Kết thêm nhiều bạn bè chất lượng mới."] },
+                          { title: "Tầng 4: Lọc sạch thế giới số", text: "Nhận ra thời gian và năng lượng của bản thân là hữu hạn, không thể lãng phí.", choices: ["Xây dựng tiêu chuẩn nghiêm ngặt cho mối quan hệ online.", "Ai kết bạn cũng đồng ý cho xôm tụ.", "Chỉ tương tác với gia đình và bạn thân cốt cán."] },
+                          { title: "Tầng 5: Mạng xã hội sạch", text: "Thế giới mạng phản chiếu thế giới thực của bạn. Lọc sạch rác tâm hồn để đón bình yên.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 5: TÌNH CẢM TUỔI HỌC TRÒ & CẢM XÚC",
+                stories: [
+                    {
+                        id: "t5_s1", title: "Cơn Mưa Sân Trường", role: "Học sinh rung động đầu đời", desc: "Cân bằng giữa cảm xúc cá nhân và tương lai qua 5 tầng lựa chọn tinh tế.",
+                        stages: [
+                          { title: "Tầng 1: Bức thư ép hoa", text: "Dưới mái hiên mưa lớn, cậu bạn bàn bên ngập ngừng đưa bức thư tỏ tình ép hoa khô.", choices: ["Bối rối nhận thư, tim đập lệch nhịp.", "Từ chối ngay lập tức vì sợ ảnh hưởng thi cử.", "Nhận nhưng không dám mở ra đọc."] },
+                          { title: "Tầng 2: Lời hứa mùa thi", text: "Cả hai cùng đặt mục tiêu đậu vào ngôi trường đại học mơ ước ở thành phố lớn.", choices: ["Động lực học tập nhân lên gấp bội.", "Bị cảm xúc chi phối, lơ là việc học.", "Thống nhất giữ khoảng cách cùng ôn thi."] },
+{ title: "Tầng 3: Sóng gió khoảng cách", text: "Điểm thi thử của một trong hai người bị sụt giảm khiến bố mẹ lo lắng can thiệp.", choices: ["Tạm gác chuyện tình cảm, tập trung cao độ.", "Bất chấp sự cấm cản của gia đình.", "Chủ động hẹn gặp nói lời chia tay đẹp đẽ."] },
+                          { title: "Tầng 4: Hẹn ước tương lai", text: "Mùa gặt quả ngọt: Cả hai đều đạt kết quả cao trong kỳ thi chính thức.", choices: ["Cùng nắm tay bước vào ngưỡng cửa đại học.", "Mỗi người một ngã rẽ nhưng giữ kỷ niệm đẹp.", "Nhận ra đó chỉ là rung động thanh xuân qua đi."] },
+                          { title: "Tầng 5: Thanh xuân rực rỡ", text: "Rung động đầu đời đẹp nhất vì nó dạy ta biết cách trân trọng và nỗ lực hoàn thiện mình.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t5_s2", title: "Lời Từ Chối Khéo Léo", role: "Người kẹt trong tỏ tình khó xử", desc: "5 vòng xử lý tình huống khéo léo để không tổn thương đối phương lẫn bản thân.",
+                        stages: [
+                          { title: "Tầng 1: Lời tỏ tình bất ngờ", text: "Được bạn cùng khối tỏ tình công khai ở sân trường trước sự chứng kiến của nhiều người.", choices: ["Luống cuống từ chối phũ phàng khiến đối phương muối mặt.", "Nhận lời gượng ép vì sợ người ta buồn.", "Kéo ra góc riêng từ chối nhẹ nhàng, tế nhị."] },
+                          { title: "Tầng 2: Ánh mắt xa lánh", text: "Đối phương buồn bã, tránh mặt bạn mỗi khi đi ngang qua hành lang.", choices: ["Chủ động cười chào bình thường không ngại ngùng.", "Mặc kệ, thời gian sẽ chữa lành tất cả.", "Cảm thấy áy náy tìm cách mua quà chuộc lỗi."] },
+                          { title: "Tầng 3: Lời đàm tiếu", text: "Mấy đứa bạn hớt hải trêu chọc và bàn tán về vụ từ chối tỏ tình đó.", choices: ["Nghiêm khắc nhắc nhở không đùa cợt vô duyên.", "Cười hề hề cho qua chuyện.", "Tức giận bỏ đi không thèm chấp."] },
+                          { title: "Tầng 4: Giữ gìn tôn trọng", text: "Đối phương vượt qua cú sốc, nhắn tin cảm ơn vì sự tế nhị năm xưa của bạn.", choices: ["Đáp lại chân thành, giữ mối quan hệ bạn bè trong sáng.", "Chỉ thả icon xác nhận không nói thêm.", "Chặn luôn liên lạc cho dứt điểm."] },
+                          { title: "Tầng 5: Nghệ thuật từ chối", text: "Từ chối khéo léo là biểu hiện của sự thấu cảm và tử tế bậc nhất trong giao tiếp.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+id: "t5_s3", title: "Sự Phụ Thuộc Cảm Xúc", role: "Cá nhân bị chi phối bởi thái độ người khác", desc: "Hành trình lấy lại quyền kiểm soát cảm xúc bản thân.",
+                        stages: [
+                          { title: "Tầng 1: Sáng nắng chiều mưa", text: "Tâm trạng bạn hoàn toàn phụ thuộc vào việc người ấy có rep tin nhắn nhanh hay không.", choices: ["Điên cuồng F5 màn hình chờ đợi trong vô vọng.", "Tự nhắc nhở bản thân phải buông bỏ sự phụ thuộc.", "Bắt đầu trách móc tại sao họ lạnh nhạt."] },
+                          { title: "Tầng 2: Đánh mất chính mình", text: "Không còn tập trung làm được việc gì ra hồn vì tâm trí cứ mải bận tâm thái độ họ.", choices: ["Quyết tâm detox cảm xúc, tìm lại sở thích cũ.", "Càng lún sâu vào sự u uất, lụy tình.", "Nhờ bạn thân kéo ra ngoài đi chơi giải khuây."] },
+                          { title: "Tầng 3: Sự thức tỉnh", text: "Nhận ra mình đang trao quyền làm chủ cảm xúc bản thân vào tay kẻ khác.", choices: ["Chặn liên lạc, kiên quyết cắt đứt sự chi phối.", "Vẫn tiếp tục chịu đựng vòng luẩn quẩn độc hại.", "Thiết lập ranh giới rõ ràng trong giao tiếp."] },
+                          { title: "Tầng 4: Tự chủ nội tâm", text: "Cảm giác bình yên trở lại khi hạnh phúc không còn phải đi xin xỏ từ ai.", choices: ["Tận hưởng cuộc sống độc thân tự do rực rỡ.", "Sợ hãi không dám mở lòng yêu ai nữa.", "Học cách yêu thương bản thân mình trước tiên."] },
+                          { title: "Tầng 5: Làm chủ cảm xúc", text: "Không ai làm bạn tổn thương nếu bạn không cho phép họ có quyền đó.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t5_s4", title: "Khoảng Cách Lời Nói", role: "Đứa con/người bạn khó mở lời xin lỗi", desc: "Vượt qua cái tôi cá nhân qua 5 vòng quyết định để hàn gắn mối quan hệ.",
+                        stages: [
+                          { title: "Tầng 1: Câu nói tổn thương", text: "Trong cơn nóng giận, bạn lỡ thốt ra những lời cay độc làm tổn thương người thân thiết nhất.", choices: ["Hối hận ngay lập tức nhưng sĩ diện không dám mở lời.", "Nghĩ họ đáng bị như vậy nên phớt lờ.", "Bỏ ra ngoài phóng xe đi giải tỏa."] },
+                          { title: "Tầng 2: Sự lạnh lẽo", text: "Căn nhà chìm trong sự im lặng nặng nề, ai nấy đều mang vết thương lòng.", choices: ["Viết một bức thư tay xin lỗi đặt lên bàn.", "Cố tình làm vờ như không có chuyện gì xảy ra.", "Chờ đối phương chủ động làm hòa trước."] },
+{ title: "Tầng 3: Đấu tranh nội tâm", text: "Cái tôi quá lớn cứ ngăn cản bạn thốt ra hai tiếng 'tớ xin lỗi'.", choices: ["Vượt qua sĩ diện, bước đến ôm chầm lấy họ.", "Vẫn chờ đợi một cơ hội ngẫu nhiên nào đó.", "Nhờ người thứ ba đứng ra giảng hòa hộ."] },
+                          { title: "Tầng 4: Khoảnh khắc hàn gắn", text: "Lời xin lỗi chân thành được thốt ra giải tỏa toàn bộ bầu không khí ngột ngạt.", choices: ["Cảm giác nhẹ nhõm, trân trọng nhau hơn.", "Cảm thấy ngại ngùng trong những phút đầu.", "Hứa không bao giờ tái phạm sự nóng giận."] },
+                          { title: "Tầng 5: Sức mạnh lời xin lỗi", text: "Xin lỗi không có nghĩa là bạn yếu đuối, nó chứng tỏ bạn coi trọng mối quan hệ hơn cái tôi.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 6: TÌNH BẠN, SỰ RẠN NỨT & NIỀM TIN",
+                stories: [
+                    {
+                        id: "t6_s1", title: "Sự Đố Kỵ Ngọt Ngào", role: "Người bạn có khoảng cách thành tích", desc: "Vượt qua sự đố kỵ ngầm trong tình bạn qua 5 tầng phân nhánh.",
+                        stages: [
+                          { title: "Tầng 1: Giải thưởng danh giá", text: "Bạn thân giành giải nhất tỉnh, còn bạn trượt từ vòng gửi xe. Nụ cười chúc mừng gượng gạo.", choices: ["Ôm bạn chúc mừng nhưng lòng quặn thắt ghen tị.", "Tìm cớ cáo bận bỏ về trước vì quá tủi thân.", "Thành thật thú nhận với bạn sự ghen tị của mình."] },
+                          { title: "Tầng 2: Vết nứt âm thầm", text: "Khoảng cách vô hình xuất hiện, bạn bắt đầu tránh mặt và ngại gặp thành công của bạn.", choices: ["Nỗ lực cày cuốc phục thù ở kỳ thi sau.", "Chấp nhận năng lực mình kém hơn, thu mình lại.", "Cố tỏ ra bình thường nhưng thực chất xa cách."] },
+                          { title: "Tầng 3: Lời thú nhận chân thành", text: "Bạn thân nhận ra sự lạnh nhạt và chủ động đến tìm bạn tâm sự.", choices: ["Khóc nức nở thừa nhận sự đố kỵ xấu xí của mình.", "Chối bay biến bảo mình vẫn bình thường.", "Nói thẳng lý do muốn tạm xa nhau một thời gian."] },
+                          { title: "Tầng 4: Chữa lành tình bạn", text: "Sự thấu hiểu và ôm ấp xóa tan mọi tị hiềm, tình bạn trở nên sâu sắc hơn.", choices: ["Cùng nhau học tập, kéo nhau tiến lên phía trước.", "Vẫn chơi với nhau nhưng không còn thân thiết như xưa.", "Cùng nhau trải nghiệm những sở thích mới ngoài học."] },
+{ title: "Tầng 5: Chiến thắng bản ngã", text: "Đố kỵ là bản năng, nhưng mừng cho thành công của bạn thân là sự lựa chọn cao thượng.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t6_s2", title: "Lời Nói Sau Lưng", role: "Người phát hiện bị bạn thân phản bội", desc: "Xử lý khủng hoảng niềm tin qua 5 vòng đối chất và trưởng thành.",
+                        stages: [
+                          { title: "Tầng 1: Tai vách mạch rừng", text: "Nghe người khác mách lại rằng bạn thân nhất nói xấu bí mật của bạn sau lưng.", choices: ["Đùng đùng nổi giận đi tìm đối chất ngay lập tức.", "Bán tín bán nghi, âm thầm quan sát kiểm chứng.", "Tỏ ra cay đắng quyết định tuyệt giao ngay."] },
+                          { title: "Tầng 2: Cuộc đối chất", text: "Gặp nhau ở quán nước, bạn thẳng thắn trưng ra bằng chứng đoạn chat.", choices: ["Bạn thân cúi đầu thừa nhận trong sự ngượng ngùng.", "Bạn thân cãi cùn bảo bạn bịa đặt, vu khống.", "Bạn thân giải thích chỉ là hiểu lầm ngữ cảnh."] },
+                          { title: "Tầng 3: Sụp đổ niềm tin", text: "Niềm tin xây dựng bao năm nay bỗng chốc sụp đổ chỉ vì một lời nói sau lưng.", choices: ["Cắt đứt quan hệ vĩnh viễn, không bao giờ tha thứ.", "Cho cơ hội giải thích nhưng không thể thân như trước.", "Tha thứ hoàn toàn vì ai cũng có lúc lỡ lời."] },
+                          { title: "Tầng 4: Hậu bão tố", text: "Vết sẹo có thể mờ đi nhưng niềm tin trọn vẹn rất khó lấy lại như ban đầu.", choices: ["Rút kinh nghiệm sâu sắc trong việc chọn bạn gửi vàng.", "Mất niềm tin vào tất cả các mối quan hệ xung quanh.", "Trân trọng những người bạn thực sự còn lại."] },
+                          { title: "Tầng 5: Bản lĩnh trưởng thành", text: "Trưởng thành là khi ta học được cách chấp nhận sự phản bội và buông bỏ nhẹ nhàng.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t6_s3", title: "Gánh Nặng Công Việc Nhóm", role: "Thành viên gánh team", desc: "Đối phó với sự ỷ lại của bạn bè trong dự án học tập qua 5 tầng quyết định.",
+                        stages: [
+                          { title: "Tầng 1: Đùn đẩy trách nhiệm", text: "Được phân công làm bài tập nhóm lớn, các thành viên khác thảy hết việc lên đầu bạn.", choices: ["Ôm hết làm một mình cho nhanh gọn, đẹp bài.", "Triệu tập họp nhóm phân công rõ ràng deadline.", "Tố cáo lên giáo viên ngay lập tức."] },
+{ title: "Tầng 2: Kiệt sức một mình", text: "Khối lượng công việc khổng lồ đè nặng khiến bạn kiệt quệ trước ngày nộp.", choices: ["Tự gồng gánh đến kiệt sức không dám than vãn.", "Làm phần mình, bỏ trống phần người khác xem họ chịu không.", "Nhắn tin cầu cứu sự can thiệp của nhóm trưởng."] },
+                          { title: "Tầng 3: Tối hậu thư", text: "Tuyên bố nếu không ai làm phần việc của mình, bạn sẽ gạch tên họ ra khỏi danh sách.", choices: ["Các thành viên hoảng hốt xắn tay vào làm bù.", "Họ tức giận dọa tẩy chay bạn vì quá nguyên tắc.", "Giáo viên đứng ra can thiệp phân xử công bằng."] },
+                          { title: "Tầng 4: Hoàn thành dự án", text: "Bài tập nhóm đạt điểm tuyệt đối nhưng để lại bài học đắt giá về kỹ năng quản trị.", choices: ["Rút kinh nghiệm không bao giờ làm việc nhóm với họ nữa.", "Cảm thấy tự hào vì năng lực tự lập của bản thân.", "Thiết lập quy chế làm việc nhóm minh bạch từ đầu."] },
+                          { title: "Tầng 5: Lãnh đạo thực chiến", text: "Gánh team không có nghĩa là làm thay việc người khác, mà là biết cách bắt họ phải chịu trách nhiệm.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t6_s4", title: "Ngã Rẽ Nhóm Bạn", role: "Người đứng trước cám dỗ số đông", desc: "Từ chối lối sống lệch lạc để giữ gìn nguyên tắc bản thân qua 5 vòng.",
+                        stages: [
+                          { title: "Tầng 1: Cuộc vui lệch chuẩn", text: "Nhóm bạn rủ tham gia vào một cuộc ăn chơi đua xe trái phép về khuya.", choices: ["Kiên quyết từ chối thẳng thừng cuộc vui nguy hiểm.", "Dè dặt nhận lời vì sợ bị chê là quê mùa, nhát gan.", "Tìm lý do bận việc gia đình để trốn tránh khéo."] },
+                          { title: "Tầng 2: Áp lực tẩy chay", text: "Bị nhóm bạn mỉa mai là 'đạo đức giả', 'sống khép kín' và dọa cô lập khỏi nhóm.", choices: ["Hiên ngang bước đi, không quan tâm lời đàm tiếu.", "Dao động muốn quay lại hòa nhập với đám đông.", "Tìm kiếm những người bạn lành mạnh khác thay thế."] },
+                          { title: "Tầng 3: Biến cố xảy ra", text: "Đêm đó, nhóm bạn đua xe gặp tai nạn nghiêm trọng trên đường quốc lộ.", choices: ["Bàng hoàng đau xót nhưng thấy may mắn vì đã dừng lại.", "Vội vã chạy đến bệnh viện hỗ trợ bạn bè.", "Hối hận vì đã không khuyên can họ từ trước."] },
+{ title: "Tầng 4: Chọn bạn mà chơi", text: "Sau biến cố, vòng tròn các mối quan hệ của bạn được thanh lọc hoàn toàn sạch sẽ.", choices: ["Kết bạn với những người có lối sống tích cực, lành mạnh.", "Trở nên dè dặt, khép kín hơn với tất cả mọi người.", "Tập trung 100% thời gian cho học tập và phát triển bản thân."] },
+                          { title: "Tầng 5: Bản lĩnh vững vàng", text: "Dũng cảm nói 'không' với số đông lệch lạc chính là định nghĩa chính xác nhất của sự trưởng thành.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 7: SINH TỒN, BIẾN CỐ & TỰ LẬP SỚM",
+                stories: [
+                    {
+                        id: "t7_s1", title: "Biến Cố Tài Chính", role: "Đứa con gia đình khó khăn", desc: "Đối mặt tự lập sớm và từ bỏ bớt mong muốn cá nhân qua 5 tầng thử thách.",
+                        stages: [
+                          { title: "Tầng 1: Cuộc gọi bất ngờ", text: "Bố mẹ gọi điện thông báo việc kinh doanh phá sản, yêu cầu bạn chuẩn bị tâm lý tự lập sớm.", choices: ["Khóc nghẹn ngào, hoang mang về tương lai dở dang.", "Bình tĩnh động viên bố mẹ rồi tính tiếp phương án.", "Tự trách bản thân tiêu xài hoang phí trước đây."] },
+                          { title: "Tầng 2: Săn việc làm thêm", text: "Bắt đầu rải hồ sơ xin làm pha chế, phục vụ quán cà phê ca tối để tự trang trải học phí.", choices: ["Vừa đi làm vừa học đuối sức nhưng kiên cường.", "Định bỏ học giữa chừng để đi làm kiếm tiền luôn.", "Xin học bổng nhà trường để giảm bớt gánh nặng."] },
+                          { title: "Tầng 3: Cám dỗ đồng tiền", text: "Số tiền kiếm được từ việc làm thêm thu hút, khiến bạn xao lãng việc học chính.", choices: ["Cân đối lại thời gian, đặt việc học lên hàng đầu.", "Ham kiếm tiền, bỏ bê dần sách vở trên lớp.", "Nghỉ việc bớt một ca để tập trung ôn thi đại học."] },
+                          { title: "Tầng 4: Cú lội ngược dòng", text: "Vừa giữ được học bổng vừa tự chủ tài chính cá nhân một cách đáng kinh ngạc.", choices: ["Cảm thấy tự hào vì sự gai góc, bản lĩnh của mình.", "Vẫn cảm thấy mệt mỏi vì tuổi trẻ thiếu thốn thời gian.", "Biết ơn biến cố đã nhào nặn mình thành người cứng cáp."] },
+                          { title: "Tầng 5: Bản lĩnh tự lập", text: "Nghịch cảnh không quật ngã được bạn, nó chỉ làm đôi cánh của bạn thêm vững chãi.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+id: "t7_s2", title: "Quyết Định Phút 89", role: "Trưởng nhóm xử lý sự cố công nghệ", desc: "5 tầng giải quyết khủng hoảng khi mất dữ liệu dự án ngay trước giờ G.",
+                        stages: [
+                          { title: "Tầng 1: Màn hình xanh tử thần", text: "Chỉ còn 3 tiếng nữa nộp đồ án STEM, máy tính chính bất ngờ sập nguồn mất sạch dữ liệu.", choices: ["Hoảng loạn la hét, bất lực nhìn màn hình đen ngòm.", "Hít thở sâu, kiểm tra ngay bản lưu trữ cloud phụ.", "Góc gọi kỹ thuật viên cứu hộ ổ cứng khẩn cấp."] },
+                          { title: "Tầng 2: Cứu hộ dữ liệu", text: "May mắn còn file backup cách đây 3 ngày, nhưng thiếu toàn bộ phần code tối ưu cuối cùng.", choices: ["Cả nhóm thức trắng xuyên đêm code lại từ đầu.", "Nộp tạm bản cũ chấp nhận điểm thấp hơn.", "Nhờ nhóm bạn thân khác cho mượn mã nguồn tham khảo."] },
+                          { title: "Tầng 3: Áp lực thời gian", text: "Thời gian trôi vùn vụt, đồng hồ đếm ngược từng phút trong sự căng thẳng tột độ.", choices: ["Phân chia tốc độ code thần tốc giữa các thành viên.", "Tay chân lóng ngóng làm gì cũng hỏng việc.", "Cắt bỏ bớt các tính năng phụ để tập trung hoàn thiện core."] },
+                          { title: "Tầng 4: Phút 89 hoàn thành", text: "File đồ án được nộp thành công trước deadline đúng 2 phút định mệnh.", choices: ["Thở phào nhẹ nhõm ngã quỵ vì kiệt sức.", "Cười lớn tự hào vì màn lội ngược dòng thần thánh.", "Rút kinh nghiệm xương máu về việc backup tự động."] },
+                          { title: "Tầng 5: Thần kinh thép", text: "Bản lĩnh của một leader thực thụ được tôi luyện chính xác qua những giờ phút khủng hoảng này.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t7_s3", title: "Áp Lực Thời Gian", role: "Học sinh kiệt sức vì lịch trình", desc: "Xử lý tình trạng quá tải qua 5 vòng điều chỉnh bản thân.",
+                        stages: [
+                          { title: "Tầng 1: Lịch trình kín mít", text: "Sáng học trường, chiều học chuyên, tối luyện IELTS, đêm làm dự án STEM. Bạn ngộp thở.", choices: ["Cố gắng gồng gánh ôm đồm tất cả mọi thứ.", "Lọc bỏ bớt các lớp học thêm không thực sự cần thiết.", "Ngã quỵ vì lịch trình chồng chéo quá sức."] },
+{ title: "Tầng 2: Hiệu suất chạm đáy", text: "Làm nhiều việc cùng lúc nhưng việc nào cũng chỉ đạt chất lượng hời hợt, trung bình.", choices: ["Áp dụng phương pháp Pomodoro quản trị thời gian.", "Càng rối trí hơn, buông xuôi mặc kệ số phận.", "Nhờ bố mẹ can thiệp cắt giảm bớt lịch học."] },
+                          { title: "Tầng 3: Dám nói 'Không'", text: "Từ chối lời mời tham gia thêm một câu lạc bộ mới để bảo toàn năng lượng.", choices: ["Cảm giác nhẹ nhõm khi quỹ thời gian được nới lỏng.", "Sợ bị người khác đánh giá là lười biếng, ích kỷ.", "Tập trung sâu vào 2 mục tiêu cốt lõi duy nhất."] },
+                          { title: "Tầng 4: Lấy lại nhịp sống", text: "Thời gian biểu đã vào guồng khoa học, có giờ giấc ngủ nghỉ và thể thao điều độ.", choices: ["Tinh thần minh mẫn, kết quả học tập bứt phá rõ rệt.", "Vẫn sợ lịch trình bị quá tải trở lại.", "Tận hưởng cuộc sống cân bằng đáng mơ ước."] },
+                          { title: "Tầng 5: Quản trị cuộc đời", text: "Bận rộn không có nghĩa là hiệu quả. Biết cách buông bỏ và chọn lọc mới là đỉnh cao của quản trị.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t7_s4", title: "Cú Sốc Đầu Đời", role: "Người trẻ trượt ngã sau kỳ thi lớn", desc: "Đứng dậy sau thất bại qua 5 tầng tâm lý sâu sắc.",
+                        stages: [
+                          { title: "Tầng 1: Kết quả cay đắng", text: "Nhìn bảng điểm trượt nguyện vọng 1 vào ngôi trường ao ước, thế giới như sụp đổ.", choices: ["Khóc sướt mướt, nhốt mình trong phòng tối tăm.", "Chấp nhận sự thật, tìm hướng giải thế cờ.", "Đổ lỗi cho đề thi quá bất công năm nay."] },
+                          { title: "Tầng 2: Sự tĩnh lặng đáng sợ", text: "Trải qua vài ngày chìm trong hụt hẫng, không muốn tiếp xúc với ai ngoài xã hội.", choices: ["Dần bình tâm lại, lắng nghe lời động viên của gia đình.", "Vẫn chìm đắm trong sự cay đắng, tự ti.", "Đi du lịch ngắn ngày để xốc lại tinh thần."] },
+                          { title: "Tầng 3: Ngã rẽ thứ hai", text: "Xem xét các phương án xét tuyển nguyện vọng 2 hoặc chuẩn bị ôn thi lại năm sau.", choices: ["Quyết tâm đăng ký học nguyện vọng 2 để đi tiếp.", "Bảo lưu kết quả, quyết tâm ôn thi lại phục thù.", "Buông xuôi chọn đại một trường dân lập ngẫu nhiên."] },
+{ title: "Tầng 4: Khởi đầu mới", text: "Bước chân vào môi trường học tập mới với tâm thế của một người từng trải qua sóng gió.", choices: ["Nhanh chóng thích nghi và tỏa sáng ở môi trường mới.", "Vẫn vương vấn tiếc nuối ngôi trường cũ.", "Biến sự tiếc nuối thành động lực phấn đấu vươn lên."] },
+                          { title: "Tầng 5: Sức bật nghịch cảnh", text: "Thất bại lớn nhất không phải là té ngã, mà là nằm lì dưới đất không chịu đứng dậy bước tiếp.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            },
+            {
+                category: "THỂ LOẠI 8: CHỮA LÀNH & BẢN NGÃ NỘI TÂM",
+                stories: [
+                    {
+                        id: "t8_s1", title: "Hội Chứng Kẻ Giả Mạo", role: "Học sinh sợ bị phát hiện kém cỏi", desc: "5 tầng vượt qua sự tự ti nội tại để công nhận năng lực thực sự của mình.",
+                        stages: [
+                          { title: "Tầng 1: Giải thưởng bất ngờ", text: "Được xướng tên nhận giải thưởng lớn, trong ngực trào lên cảm giác sợ hãi vì sợ mình 'ăn may'.", choices: ["Lo lắng sợ mọi người biết mình thực ra không giỏi.", "Vui vẻ đón nhận vì đó là thành quả xứng đáng.", "Tính từ chối nhận giải vì cảm thấy không xứng đáng."] },
+                          { title: "Tầng 2: Ám ảnh nội tâm", text: "Luôn sống trong nơm nớp lo sợ bị ai đó vạch trần là 'kẻ bất tài trá hình'.", choices: ["Cố gắng học gấp đôi để lấp đầy sự tự ti bên trong.", "Tâm sự với giáo viên cố vấn về sự bất an.", "Thu mình lại, không dám nhận thêm dự án nào nữa."] },
+                          { title: "Tầng 3: Nhìn nhận sự thật", text: "Nhìn lại chuỗi ngày thức thâu đêm suốt sáng nỗ lực, đó là mồ hôi nước mắt thật sự.", choices: ["Công nhận và tự hào về năng lực của chính mình.", "Vẫn hoài nghi bản thân là do ăn may may mắn.", "Viết nhật ký ghi lại từng cột mốc nỗ lực đã qua."] },
+                          { title: "Tầng 4: Đập tan bóng tối", text: "Vượt qua hội chứng tâm lý, tự tin đứng trước đám đông thuyết trình lưu loát.", choices: ["Cảm giác nhẹ nhõm, tự do bay bổng.", "Thỉnh thoảng bóng ma tự ti vẫn quay lại gõ cửa.", "Giúp đỡ những bạn trẻ khác vượt qua sự tự ti."] },
+                          { title: "Tầng 5: Xứng đáng tỏa sáng", text: "Bạn không phải kẻ giả mạo. Bạn chính là tác giả của những nỗ lực xuất sắc thuộc về mình.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+id: "t8_s2", title: "Khoảng Lặng", role: "Người đối diện kỳ vọng sụp đổ", desc: "Học cách chấp nhận sự thật và tái định hình giá trị bản thân qua 5 vòng.",
+                        stages: [
+                          { title: "Tầng 1: Sự sụp đổ toàn tập", text: "Mô hình dự án khởi nghiệp tâm huyết bị từ chối cấp vốn, mọi kỳ vọng tan thành mây khói.", choices: ["Suy sụp trầm trọng, khóc ngất giữa đường phố.", "Chấp nhận thất bại, bình tĩnh gói ghém lại hồ sơ.", "Tìm kiếm nhà đầu tư khác tiếp tục pitching."] },
+                          { title: "Tầng 2: Khoảng lặng tĩnh tâm", text: "Rời xa thành phố ồn ào về quê nhà yên bình để tĩnh dưỡng tâm hồn vài tuần.", choices: ["Hòa mình vào thiên nhiên, chữa lành vết thương.", "Vẫn ôm laptop ngày đêm dằn vặt suy nghĩ.", "Phụ giúp gia đình làm vườn, buông bỏ lo âu."] },
+                          { title: "Tầng 3: Định hình lại giá trị", text: "Nhận ra giá trị con người không nằm ở việc dự án thành công hay thất bại.", choices: ["Tái cấu trúc lại tư duy và tầm nhìn cốt lõi.", "Mất hoàn toàn niềm tin vào việc khởi nghiệp.", "Học thêm các kỹ năng quản trị mới còn thiếu sót."] },
+                          { title: "Tầng 4: Trở lại mạnh mẽ", text: "Mang phiên bản nâng cấp hoàn thiện hơn của dự án quay trở lại thương trường.", choices: ["Được hội đồng đầu tư đón nhận nồng nhiệt.", "Vẫn mang tâm lý dè dặt, sợ hãi bóng ma cũ.", "Rút gọn quy mô, làm nhỏ nhưng chắc chắn."] },
+                          { title: "Tầng 5: Bình yên nội tại", text: "Kỳ vọng sụp đổ để nhường chỗ cho những bài học vững chãi hơn mọc lên từ tro tàn.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t8_s3", title: "Tìm Lại Tiếng Nói", role: "Học sinh rụt rè trước đám đông", desc: "Hành trình 5 tầng chiến thắng nỗi sợ nói lên chính kiến.",
+                        stages: [
+                          { title: "Tầng 1: Cơn ác mộng phát biểu", text: "Mỗi lần giáo viên gọi đứng lên phát biểu trước lớp là tay chân bạn run lập cập, câm nín.", choices: ["Cúi gằm mặt xuống bàn mong không bị gọi tên.", "Lấy hết dũng khí nói lí nhí vài câu rồi ngồi xuống.", "Xin phép ra ngoài vì lý do sức khỏe."] },
+                          { title: "Tầng 2: Động lực thay đổi", text: "Nhận thấy sự rụt rè đang kìm hãm cơ hội phát triển bản thân ở ngưỡng cửa tương lai.", choices: ["Đăng ký một khóa học kỹ năng mềm giao tiếp.", "Tự nhủ tính mình vậy rồi, không thay đổi được đâu.", "Tập nói trước gương phòng ngủ một mình mỗi tối."] },
+{ title: "Tầng 3: Bước đệm nhỏ", text: "Xung phong phát biểu xây dựng bài đầu tiên trong sự cổ vũ của nhóm bạn thân.", choices: ["Tim đập chân run nhưng hoàn thành trọn vẹn.", "Nói vấp váp nửa chừng rồi ngồi thụp xuống.", "Đọc nhẩm lại giấy viết sẵn rồi đọc to lên."] },
+                          { title: "Tầng 4: Tự tin bứt phá", text: "Đứng trên sân khấu trường thuyết trình tự tin trước hàng trăm học sinh và giáo viên.", choices: ["Cảm giác vỡ òa vì đã chiến thắng nỗi sợ lớn nhất.", "Hơi căng thẳng ở đoạn đầu nhưng mượt mà phần sau.", "Hoàn thành xuất sắc nhận được tràng pháo tay lớn."] },
+                          { title: "Tầng 5: Tiếng nói cất lên", text: "Ai cũng có một nỗi sợ. Dũng cảm đối mặt với nó chính là chiếc chìa khóa mở ra thế giới.", isResult: true, choices: [] }
+                        ]
+                    },
+                    {
+                        id: "t8_s4", title: "Nút Thắt Cuối Cùng", role: "Tổng hợp nhân vật trải qua đa khủng hoảng", desc: "Bài toán tối thượng kết nối mọi trải nghiệm để tìm ra bình yên nội tại.",
+                        stages: [
+                          { title: "Tầng 1: Điểm hội tụ", text: "Bạn đứng trước cánh cửa tổng kết lại toàn bộ hành trình trưởng thành với bao thăng trầm, va vấp.", choices: ["Nhìn lại quá khứ với lòng biết ơn và sự tha thứ.", "Nuối tiếc những sai lầm giá như mình đã không chọn.", "Hào hứng đón chờ chương tiếp theo của cuộc đời."] },
+                          { title: "Tầng 2: Tháo gỡ nút thắt", text: "Từng mảnh ghép khủng hoảng hướng nghiệp, tình bạn, tâm lý nay được sắp xếp gọn gàng.", choices: ["Đúc kết thành bộ cẩm nang kỹ năng sống cho bản thân.", "Cảm thấy nhẹ nhõm vì đã vượt qua giông bão.", "Chia sẻ câu chuyện của mình để truyền cảm hứng."] },
+                          { title: "Tầng 3: Chấp nhận không hoàn hảo", text: "Hiểu rằng cuộc sống luôn có những vùng xám và sự bất định không thể đoán trước.", choices: ["Thả lỏng tâm hồn, đón nhận mọi biến cố mỉm cười.", "Vẫn muốn kiểm soát mọi thứ trong tầm tay.", "Tìm kiếm sự tĩnh lặng trong tâm hồn mỗi ngày."] },
+                          { title: "Tầng 4: Bản lĩnh vững chãi", text: "Đứng vững trước mọi giông bão cuộc đời với một trái tim can đảm và lý trí tỉnh táo.", choices: ["Hiên ngang bước ra thế giới rộng lớn ngoài kia.", "Giữ sự khiêm nhường tiếp tục học hỏi không ngừng.", "Tự tin làm chủ hoàn toàn tương lai chính mình."] },
+                          { title: "Tầng 5: Bình yên viên mãn", text: "Hành trình vạn dặm bắt đầu từ một quyết định dũng cảm. Bạn đã hoàn thành xuất sắc sứ mệnh làm chủ tương lai.", isResult: true, choices: [] }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // Chuyển dữ liệu 8 nhóm tình huống sang cấu trúc thống nhất cho giao diện.
+        const categoryMeta = [
+            { icon: 'fa-compass', color: 'from-blue-600 to-indigo-600', desc: 'Khám phá lựa chọn, định hướng và trưởng thành.' },
+            { icon: 'fa-brain', color: 'from-violet-600 to-fuchsia-600', desc: 'Nhận diện áp lực tâm lý và lựa chọn cách ứng phó.' },
+            { icon: 'fa-scale-balanced', color: 'from-amber-600 to-orange-600', desc: 'Đối diện các tình huống đạo đức và trách nhiệm xã hội.' },
+            { icon: 'fa-globe', color: 'from-cyan-600 to-blue-600', desc: 'Ra quyết định có trách nhiệm trong môi trường số.' },
+            { icon: 'fa-heart', color: 'from-pink-600 to-rose-600', desc: 'Hiểu cảm xúc và ứng xử trong các mối quan hệ.' },
+            { icon: 'fa-people-group', color: 'from-emerald-600 to-teal-600', desc: 'Xử lý mâu thuẫn, niềm tin và hợp tác.' },
+            { icon: 'fa-bolt', color: 'from-orange-600 to-red-600', desc: 'Quản lý áp lực và thích ứng trước thử thách.' },
+            { icon: 'fa-seedling', color: 'from-green-600 to-lime-600', desc: 'Phát triển bản thân và củng cố nội lực.' }
+        ];
+
+        const categoriesData = fullDatabase.map((category, index) => ({
+            id: `category-${index + 1}`,
+            title: category.category.replace(/^THỂ LOẠI \d+:\s*/, ''),
+            desc: categoryMeta[index]?.desc || 'Thực hành kỹ năng ra quyết định qua tình huống thực tế.',
+            icon: categoryMeta[index]?.icon || 'fa-brain',
+            color: categoryMeta[index]?.color || 'from-blue-600 to-indigo-600',
+            scenarios: category.stories.map(story => ({
+                id: story.id,
+                title: story.title,
+                role: story.role,
+                desc: story.desc,
+                tiers: story.stages.map(stage => ({
+                    title: stage.title,
+                    situation: stage.text,
+                    choices: (stage.choices || []).map((choice, choiceIndex) => ({
+                        text: choice,
+                        // Điểm hiện tại là điểm minh họa của prototype, cần hiệu chỉnh theo rubric nghiên cứu.
+                        score: [60, 85, 70][choiceIndex] ?? 70,
+                        feedback: 'Hãy cân nhắc mục tiêu, thông tin đang có, các hệ quả trước mắt và lâu dài, cũng như mức độ an toàn của phương án. Đánh giá một lựa chọn cần đặt trong hoàn cảnh cụ thể.'
+                    }))
+                }))
+            }))
+        }));
+
+        class DecisionSimulatorApp {
+            constructor() {
+                this.currentCategory = null;
+                this.currentScenario = null;
+                this.currentTierIndex = 0;
+                this.totalScore = 0;
+                this.history = JSON.parse(localStorage.getItem('sim_history') || '[]');
+                this.badges = JSON.parse(localStorage.getItem('sim_badges') || '[]');
+                this.init();
+            }
+
+            init() {
+                this.renderCategories(categoriesData);
+                this.updateStats();
+            }
+
+            renderCategories(cats) {
+                const grid = document.getElementById('categories-grid');
+                grid.innerHTML = cats.map(cat => `
+                    <button type="button" onclick="app.selectCategory('${cat.id}')" aria-label="Mở chủ đề ${cat.title}" class="w-full text-left glass-panel p-6 rounded-3xl hover:border-brand-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400 transition-all duration-300 cursor-pointer group hover:-translate-y-1 shadow-xl flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr ${cat.color} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition duration-300">
+                                <i class="fa-solid ${cat.icon}"></i>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-400 group-hover:bg-brand-500/10 group-hover:text-brand-400 transition">${cat.scenarios.length} tình huống</span>
+                        </div>
+                        <div class="space-y-2 w-full">
+                            <h3 class="text-lg font-bold text-white group-hover:text-brand-400 transition">${cat.title}</h3>
+                            <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${cat.desc}</p>
+                        </div>
+                        <div class="pt-2 flex items-center text-xs font-bold text-brand-400 space-x-2 w-full">
+                            <span>Xem các tình huống</span>
+                            <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                        </div>
+                    </button>
+                `).join('');
+            }
+
+            handleSearch(query) {
+                const q = query.toLowerCase().trim();
+                if (!q) {
+                    this.renderCategories(categoriesData);
+                    return;
+                }
+                const filtered = categoriesData.map(cat => {
+                    const matchedScenarios = cat.scenarios.filter(s => s.title.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q));
+                    if (cat.title.toLowerCase().includes(q) || matchedScenarios.length > 0) {
+                        return { ...cat, scenarios: matchedScenarios.length > 0 ? matchedScenarios : cat.scenarios };
+                    }
+                    return null;
+                }).filter(Boolean);
+                this.renderCategories(filtered);
+            }
+
+            scrollToCategories() {
+                document.getElementById('categories-section').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            selectCategory(catId) {
+                this.currentCategory = categoriesData.find(c => c.id === catId);
+                if (!this.currentCategory) return;
+
+                document.getElementById('category-title').innerText = this.currentCategory.title;
+                document.getElementById('category-desc').innerText = this.currentCategory.desc;
+
+                const grid = document.getElementById('scenarios-grid');
+                grid.innerHTML = this.currentCategory.scenarios.map(s => `
+                    <div onclick="app.startSimulation('${s.id}')" class="glass-panel p-6 rounded-3xl hover:border-brand-500/50 transition-all duration-300 cursor-pointer group hover:-translate-y-1 shadow-xl flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">5 Tầng Quyết Định</span>
+                            <h3 class="text-lg font-bold text-white group-hover:text-brand-400 transition">${s.title}</h3>
+                            <p class="text-xs text-slate-400 line-clamp-3 leading-relaxed">${s.desc}</p>
+                        </div>
+                        <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                            <span class="text-xs text-slate-400 flex items-center space-x-1">
+                                <i class="fa-solid fa-clock text-brand-400"></i>
+                                <span>~5 phút trải nghiệm</span>
+                            </span>
+                            <div class="w-9 h-9 rounded-xl bg-brand-600/20 group-hover:bg-brand-600 text-brand-400 group-hover:text-white flex items-center justify-center transition">
+                                <i class="fa-solid fa-play text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                this.switchView('scenarios-view');
+                document.getElementById('scenarios-view').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            startSimulation(scenarioId) {
+                this.currentScenario = this.currentCategory.scenarios.find(s => s.id === scenarioId);
+                if (!this.currentScenario) return;
+
+                this.currentTierIndex = 0;
+                this.totalScore = 0;
+
+                document.getElementById('sim-scenario-title').innerText = this.currentScenario.title;
+                this.renderTier();
+                this.switchView('simulation-view');
+            }
+
+            renderTier() {
+                const tier = this.currentScenario.tiers[this.currentTierIndex];
+                const tierNum = this.currentTierIndex + 1;
+
+                document.getElementById('tier-badge').innerText = `Tầng ${tierNum} / 5`;
+                document.getElementById('sim-progress-bar').style.width = `${(tierNum / 5) * 100}%`;
+                document.getElementById('sim-tier-number').innerText = `0${tierNum}`;
+                document.getElementById('sim-situation-text').innerText = tier.situation;
+
+                const choicesContainer = document.getElementById('sim-choices-container');
+                choicesContainer.innerHTML = tier.choices.map((choice, idx) => `
+                    <button onclick="app.makeChoice(${idx})" class="w-full text-left p-4 rounded-2xl glass-card hover:bg-slate-800 hover:border-brand-500/50 transition duration-300 flex items-start space-x-3 group">
+                        <span class="w-7 h-7 rounded-lg bg-slate-800 group-hover:bg-brand-600 text-slate-300 group-hover:text-white flex items-center justify-center text-xs font-bold shrink-0 transition">${String.fromCharCode(65 + idx)}</span>
+                        <span class="text-sm text-slate-200 group-hover:text-white leading-relaxed font-medium pt-0.5">${choice.text}</span>
+                    </button>
+                `).join('');
+
+                document.getElementById('sim-feedback-box').classList.add('hidden');
+
+                // Tầng kết luận không có phương án lựa chọn: hiển thị nội dung và nút xem báo cáo.
+                if (!tier.choices || tier.choices.length === 0) {
+                    document.getElementById('feedback-title').innerText = 'Kết luận tình huống';
+                    document.getElementById('feedback-desc').innerText = tier.situation;
+                    document.getElementById('feedback-score-badge').innerText = 'Đã hoàn thành tình huống';
+                    document.getElementById('feedback-icon').innerHTML = '<i class="fa-solid fa-flag-checkered"></i>';
+                    document.getElementById('feedback-icon').className = 'w-10 h-10 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center text-lg font-bold';
+                    document.getElementById('next-tier-btn-text').innerText = 'Xem Báo Cáo Tổng Kết';
+                    document.getElementById('sim-feedback-box').classList.remove('hidden');
+                    document.getElementById('sim-feedback-box').scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+
+            makeChoice(choiceIdx) {
+                const tier = this.currentScenario.tiers[this.currentTierIndex];
+                const choice = tier.choices[choiceIdx];
+                this.totalScore += choice.score;
+
+                // Disable choice buttons during feedback
+                const buttons = document.querySelectorAll('#sim-choices-container button');
+                buttons.forEach(b => b.disabled = true);
+
+                const feedbackBox = document.getElementById('sim-feedback-box');
+                const feedbackIcon = document.getElementById('feedback-icon');
+                const feedbackTitle = document.getElementById('feedback-title');
+                const feedbackScoreBadge = document.getElementById('feedback-score-badge');
+                const feedbackDesc = document.getElementById('feedback-desc');
+                const nextBtnText = document.getElementById('next-tier-btn-text');
+
+                if (choice.score >= 80) {
+                    feedbackBox.className = "glass-panel p-6 sm:p-8 rounded-3xl border-l-4 border-emerald-500 bg-emerald-950/20 space-y-4 animate-fade-in";
+                    feedbackIcon.className = "w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg font-bold";
+                    feedbackIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    feedbackTitle.innerText = "Quyết Định Xuất Sắc!";
+                    feedbackScoreBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400";
+                    feedbackScoreBadge.innerText = `+${choice.score} Điểm tư duy`;
+                } else if (choice.score >= 50) {
+                    feedbackBox.className = "glass-panel p-6 sm:p-8 rounded-3xl border-l-4 border-amber-500 bg-amber-950/20 space-y-4 animate-fade-in";
+                    feedbackIcon.className = "w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg font-bold";
+                    feedbackIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    feedbackTitle.innerText = "Quyết Định Tạm Ổn";
+                    feedbackScoreBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400";
+                    feedbackScoreBadge.innerText = `+${choice.score} Điểm tư duy`;
+                } else {
+                    feedbackBox.className = "glass-panel p-6 sm:p-8 rounded-3xl border-l-4 border-rose-500 bg-rose-950/20 space-y-4 animate-fade-in";
+                    feedbackIcon.className = "w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg font-bold";
+                    feedbackIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    feedbackTitle.innerText = "Quyết Định Rủi Ro Cao";
+                    feedbackScoreBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400";
+                    feedbackScoreBadge.innerText = `+${choice.score} Điểm tư duy`;
+                }
+
+                feedbackDesc.innerText = choice.feedback;
+
+                if (this.currentTierIndex >= 4) {
+                    nextBtnText.innerText = "Xem Báo Cáo Tổng Kết";
+                } else {
+                    nextBtnText.innerText = "Tiếp tục Tầng tiếp theo";
+                }
+
+                feedbackBox.classList.remove('hidden');
+                feedbackBox.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            nextTier() {
+                this.currentTierIndex++;
+                if (this.currentTierIndex >= 5) {
+                    this.showReport();
+                } else {
+                    this.renderTier();
+                }
+            }
+
+            showReport() {
+                const avgScore = Math.round(this.totalScore / 4);
+                document.getElementById('report-scenario-name').innerText = this.currentScenario.title;
+                document.getElementById('report-total-score').innerText = `${this.totalScore} / 400`;
+
+                let rating = "Xuất Sắc";
+                let summary = "Bạn sở hữu tư duy chiến lược cực kỳ nhạy bén, khả năng nhìn nhận và xử lý khủng hoảng đẳng cấp chuyên gia hàng đầu.";
+                if (avgScore < 70 && avgScore >= 50) {
+                    rating = "Khá Tốt";
+                    summary = "Bạn có nền tảng tư duy ổn định, tuy nhiên cần cẩn trọng hơn trong các quyết định dài hạn để tối ưu hóa hiệu suất.";
+                } else if (avgScore < 50) {
+                    rating = "Cần Cải Thiện";
+                    summary = "Quyết định của bạn còn nhiều rủi ro tiềm ẩn. Hãy rèn luyện thêm tư duy phản biện và chiến lược quản trị hệ thống.";
+                }
+
+                document.getElementById('report-rating').innerText = rating;
+                document.getElementById('report-feedback-summary').innerText = summary;
+
+                // Save stats history
+                this.history.push({ title: this.currentScenario.title, score: this.totalScore, date: new Date().toLocaleDateString() });
+                localStorage.setItem('sim_history', JSON.stringify(this.history));
+                this.updateStats();
+
+                this.switchView('report-view');
+            }
+
+            restartCurrentScenario() {
+                this.startSimulation(this.currentScenario.id);
+            }
+
+            goHome() {
+                this.switchView('home-view');
+            }
+
+            backToScenarios() {
+                this.switchView('scenarios-view');
+            }
+
+            switchView(viewId) {
+                const views = ['home-view', 'scenarios-view', 'simulation-view', 'report-view'];
+                views.forEach(v => {
+                    const el = document.getElementById(v);
+                    if (el) el.classList.add('hidden');
+                });
+                const target = document.getElementById(viewId);
+                if (!target) return;
+                target.classList.remove('hidden');
+                target.classList.add('animate-fade-in');
+                // Force the selected view to render at the top, avoiding the impression that nothing happened.
+                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            }
+
+            openProjectBook(title, url) {
+                const frame = document.getElementById('project-book-frame');
+                const bookView = document.getElementById('project-book-view');
+                document.getElementById('project-book-title').textContent = title;
+                document.getElementById('project-book-external').href = url;
+                // Use the official flipbook URL in an iframe, matching Heyzine's embed format.
+                frame.src = 'about:blank';
+                frame.src = url;
+                document.getElementById('project-modules').classList.add('hidden');
+                document.getElementById('categories-section').classList.add('hidden');
+                bookView.classList.remove('hidden');
+                bookView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            closeProjectBook() {
+                document.getElementById('project-book-frame').src = 'about:blank';
+                document.getElementById('project-book-view').classList.add('hidden');
+                document.getElementById('project-modules').classList.remove('hidden');
+                document.getElementById('categories-section').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            openStatsModal() {
+                const completedCount = this.history.length;
+                const avgScore = completedCount > 0 ? Math.round(this.history.reduce((acc, cur) => acc + cur.score, 0) / completedCount) : 0;
+
+                document.getElementById('stat-completed-count').innerText = completedCount;
+                document.getElementById('stat-avg-score').innerText = `${avgScore} đ`;
+
+                const badgesContainer = document.getElementById('badges-container');
+                badgesContainer.innerHTML = completedCount > 0 ? `
+                    <div class="glass-card p-3 rounded-xl flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs"><i class="fa-solid fa-medal"></i></div>
+                        <div>
+                            <span class="text-xs font-bold text-white block">Nhà Chiến Lược Tập Sự</span>
+                            <span class="text-[10px] text-slate-400">Đã hoàn thành ít nhất 1 cốt truyện mô phỏng</span>
+                        </div>
+                    </div>
+                ` : `<p class="text-xs text-slate-500 italic">Chưa có thành tích nào. Hãy hoàn thành các cốt truyện để mở huy hiệu!</p>`;
+
+                document.getElementById('stats-modal').classList.remove('hidden');
+            }
+
+            closeStatsModal() {
+                document.getElementById('stats-modal').classList.add('hidden');
+            }
+
+            openAiChat() {
+                document.getElementById('ai-chat-modal').classList.remove('hidden');
+            }
+
+            closeAiChat() {
+                document.getElementById('ai-chat-modal').classList.add('hidden');
+            }
+
+            async sendAiMessage(e) {
+                e.preventDefault();
+                const inputEl = document.getElementById('chat-input');
+                const text = inputEl.value.trim();
+                if (!text) return;
+
+                const messagesContainer = document.getElementById('chat-messages');
+                
+                // Append User message
+                messagesContainer.innerHTML += `
+                    <div class="flex items-start justify-end space-x-3">
+                        <div class="glass-card bg-brand-600/20 border-brand-500/30 p-4 rounded-2xl text-sm text-slate-100 max-w-[80%] leading-relaxed">
+                            ${text}
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-white text-xs shrink-0">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                    </div>
+                `;
+                inputEl.value = '';
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                // Typing indicator
+                const typingId = 'typing-' + Date.now();
+                messagesContainer.innerHTML += `
+                    <div id="${typingId}" class="flex items-start space-x-3 animate-fade-in">
+                        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-xs shrink-0">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="glass-card p-4 rounded-2xl text-sm text-slate-400">
+                            Trợ lý AI đang phân tích chiến lược...
+                        </div>
+                    </div>
+                `;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                try {
+                    const systemPrompt = "Bạn là trợ lý AI chuyên gia phân tích chiến lược kinh doanh, quản trị khủng hoảng và giải quyết vấn đề thực tế. Hãy đưa ra lời khuyên súc tích, sắc bén, chuyên nghiệp bằng tiếng Việt.";
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                    
+                    const payload = {
+                        contents: [{ parts: [{ text: text }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    };
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    const reply = result.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, tôi đang gặp sự cố kết nối. Hãy thử lại sau nhé.";
+
+                    document.getElementById(typingId).remove();
+
+                    messagesContainer.innerHTML += `
+                        <div class="flex items-start space-x-3 animate-fade-in">
+                            <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-xs shrink-0">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <div class="glass-card p-4 rounded-2xl text-sm text-slate-200 max-w-[80%] leading-relaxed">
+                                ${reply}
+                            </div>
+                        </div>
+                    `;
+                } catch (err) {
+                    document.getElementById(typingId).remove();
+                    messagesContainer.innerHTML += `
+                        <div class="flex items-start space-x-3 animate-fade-in">
+                            <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-xs shrink-0">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <div class="glass-card p-4 rounded-2xl text-sm text-rose-400 max-w-[80%] leading-relaxed">
+                                Đã xảy ra lỗi kết nối AI. Vui lòng thử lại câu hỏi khác.
+                            </div>
+                        </div>
+                    `;
+                }
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            updateStats() {
+                // Background updates if needed
+            }
+        }
+
+        const app = new DecisionSimulatorApp();
+    </script>
+</body>
+</html>
